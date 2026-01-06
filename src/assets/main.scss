@@ -1,0 +1,13 @@
+$primary: #2c3e50; 
+$table-cell-padding-y: 0.25rem;
+// You can override variables here BEFORE the import
+@import "bootstrap/scss/bootstrap";
+
+.spreadsheet {
+  table {
+    // border: 1px solid silver;
+    tr {
+      td { padding: 5px; }
+    }
+  }
+}
