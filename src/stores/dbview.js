@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia';
+import { ref } from 'vue';
 import  axios from 'axios';
 
-const urlbase = import.meta.env.VUE_API_URL;
+const urlbase = import.meta.env.VITE_API_URL;
 
 export const useDbStore = defineStore('dbview', {
   state: () => ({
@@ -12,7 +13,7 @@ export const useDbStore = defineStore('dbview', {
   actions: {
     async fetchDb() {
       this.loading = true;
-      const response = await axios.get(`${urlbase}/api/db/`);
+      const response = await axios.get(`${urlbase}/api/db`);
       this.tables = response.data;
       this.loading = false;
     },

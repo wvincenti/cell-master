@@ -1,8 +1,10 @@
 $primary: #2c3e50; 
 $table-cell-padding-y: 0.25rem;
+// 1. Tell the SCSS where the actual font files live in node_modules
+$bootstrap-icons-font-dir: "../../../node_modules/bootstrap-icons/font/fonts";
 // You can override variables here BEFORE the import
 @import "bootstrap/scss/bootstrap";
-
+@import "bootstrap-icons/font/bootstrap-icons.scss";
 .spreadsheet {
   table {
     // border: 1px solid silver;

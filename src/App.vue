@@ -5,20 +5,7 @@ import { onMounted } from 'vue';
 import DbView from './components/celltables/DbView.vue';
 import GridContainer from './components/gridview/GridContainer.vue';
 import CellTablesContainer from './components/celltables/CellTablesContainer.vue';
-
-const spreadsheetStore = useSpreadsheetStore();
-const dbStore = useDbStore();
-
-// Now you can use store.fetchCells() or store.cells
-onMounted(async () => {
-  try {
-    // const cells = await spreadsheetStore.fetchCells()
-    // console.log(cells)
-    await dbStore.fetchDb();
-  } catch (error) {
-    console.error(error)
-  }
-})
+import ViewContainer from './components/tableviews/ViewContainer.vue';
 
 const rows = [];
 const cols = [];
@@ -37,24 +24,26 @@ for (let i = 0; i < tWidht; i++) {
 
 <template>
   <div class="text-center display-6 bg-dark text-light">CELL MASTER</div>
-  <div class="container-fluid bg-dark h-100">
+  <div class="container-fluid h-100">
     <div class="row">
-      <div id="grid-view-container"  class="col">
+      <div id="grid-view-container" class="col">
         <Suspense>
-         <GridContainer></GridContainer>
+          <GridContainer></GridContainer>
         </Suspense>
       </div>
     </div>
-    <div class="row">
-      <CellTablesContainer></CellTablesContainer>
-    </div>
+    <div class="row px-0">
+      <div class="col-6">
+        <CellTablesContainer></CellTablesContainer>
+      </div>
+      <div class="col-6">
+        <ViewContainer></ViewContainer>
+      </div>
 
+    </div>
   </div>
- 
+
 </template>
 
 
-<style scoped>
-
-
-</style>
+<style scoped></style>
