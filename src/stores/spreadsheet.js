@@ -2,8 +2,10 @@ import { defineStore } from 'pinia'
 import axios from 'axios'
 
 const urlbase = import.meta.env.VITE_API_URL
+
 console.log('sheet store running')
 console.log(urlbase)
+
 export const getColLabel = (n) => {
   if (n < 1) {
     return 'ID'
@@ -24,31 +26,30 @@ export const getColLabel = (n) => {
  */
 export function applyJoin(currentRows, layer, allCells) {
   // 1. Convert the target sheet into a searchable 2D array first
-  const targetSheetData = this.getSheetAsArray(layer.sheetId);
+  const targetSheetData = this.getSheetAsArray(layer.sheetId)
 
-  return currentRows.map(row => {
+  return currentRows.map((row) => {
     // 2. Get the value we are joining ON from the current row
     // (Assuming layer.onCol is the index)
-    const joinValue = row[layer.onCol]?.value;
+    const joinValue = row[layer.onCol]?.value
 
     // 3. Find the matching row in the target sheet
-    const matchingRow = targetSheetData.find(targetRow => 
-      targetRow[layer.targetCol]?.value === joinValue
-    );
+    const matchingRow = targetSheetData.find(
+      (targetRow) => targetRow[layer.targetCol]?.value === joinValue,
+    )
 
     // 4. If match found, merge them. If not, append empty cells to keep row length consistent
     if (matchingRow) {
-      return [...row, ...matchingRow];
+      return [...row, ...matchingRow]
     } else {
-      const emptyCells = new Array(targetSheetData[0]?.length || 0).fill({ value: '' });
-      return [...row, ...emptyCells];
+      const emptyCells = new Array(targetSheetData[0]?.length || 0).fill({ value: '' })
+      return [...row, ...emptyCells]
     }
-  });
+  })
 }
 
 export const useSpreadsheetStore = defineStore('spreadsheet', {
   state: () => ({
-
     cells: {}, // Flat list of cell objects from DB
     sheets: {},
     views: [[]],
@@ -57,7 +58,6 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
     activeView: 0,
     activeSheetId: null,
     loading: false,
-
   }),
 
   getters: {
@@ -66,32 +66,38 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       return state.cells[key] || { value: '', isDirty: false }
     },
     getView: (state) => (idx) => {
-      const view = [];
+      const view = []
       state.views[idx]?.forEach((sheet) => {
-        view.push(sheet);
+        view.push(sheet)
         // const cols = sheet.cols;
         // const view = [];
         // cols.forEach((cell) => {
         //   view.push(state.cells[cell.id]);
         // })
       })
-      return view;
-    }
+      return view
+    },
+    totalColsCount: (state) => {
+      const view = state.views[state.activeView]
+      //if (!view || view.length === 0) return 0
+      // We look at the first row to see how many columns it has
+      return 20 //view[0]?.length || 20;
+    },
   },
 
   actions: {
     async fetchSheetSchema() {
       this.loading = true
       const response = await axios.get(`${urlbase}/api/db`)
-      const sheets = response.data;
+      const sheets = response.data
       for (const [key, sheet] of Object.entries(sheets)) {
-        this.sheets[key] = sheet;
+        this.sheets[key] = sheet
       }
       this.loading = false
     },
 
     setActiveView(viewIdx) {
-      this.activeView = viewIdx;
+      this.activeView = viewIdx
     },
 
     setActiveSheetId(sheet) {
@@ -100,12 +106,10 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
     async setMaxSheetId() {
       // this.loading = true
-
       // try {
       //   const response = await axios.get(`${urlbase}/api/sheets/latestId`)
       //   console.log(response)
       //   const id = response.data == 0 ? 1 : parseInt(response.data) + 1
-  
       //   this.setActiveSheetId(id)
       //   this.maxSheetId = id
       //   console.log(id)
@@ -133,9 +137,9 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       const response = await axios.get(`${urlbase}/api/cells/${sheetId}`)
       response.data.forEach((cell) => {
         console.log('printing cell')
-        console.log(cell);
-        const ids = cell.id.split('-');
-        const key = sheetId +'-'+ ids[1] + '-' + ids[2];
+        console.log(cell)
+        const ids = cell.id.split('-')
+        const key = sheetId + '-' + ids[1] + '-' + ids[2]
         this.cells[key] = {
           value: cell.value,
           originalValue: cell.value, // Sync the "truth"
@@ -148,17 +152,17 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       this.loading = false
     },
 
-    loadRowToView(row, view) {
-      const lastRow = this.viewRows[view];
-      const nextRow = lastRow + 1;
+    loadRowToView(row, viewIdx) {
+      const lastRow = this.viewRows[viewIdx]
+      const nextRow = lastRow + 1
 
-      this.views[view][nextRow] = row;
-      this.viewRows[view] = nextRow;
+      this.views[viewIdx][nextRow] = row
+      this.viewRows[viewIdx] = nextRow
 
-      console.log(row);
-      console.log(view)
+      console.log(row)
+      console.log(viewIdx)
+      console.log(this.views[viewIdx])
     },
-    
 
     async saveCells() {
       this.loading = true

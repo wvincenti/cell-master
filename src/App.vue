@@ -2,7 +2,7 @@
 import { useSpreadsheetStore } from '@/stores/spreadsheet'; // '@' starts at /src
 import { useDbStore } from './stores/dbview';
 import { onMounted } from 'vue';
-import DbView from './components/celltables/DbView.vue';
+
 import GridContainer from './components/gridview/GridContainer.vue';
 import CellTablesContainer from './components/celltables/CellTablesContainer.vue';
 import ViewContainer from './components/tableviews/ViewContainer.vue';
@@ -24,7 +24,7 @@ for (let i = 0; i < tWidht; i++) {
 
 <template>
   <div class="text-center display-6 bg-dark text-light">CELL MASTER</div>
-  <div class="container-fluid h-100">
+  <div class="container-fluid">
     <div class="row">
       <div id="grid-view-container" class="col">
         <Suspense>
