@@ -51,11 +51,18 @@ export function applyJoin(currentRows, layer, allCells) {
 export const useSpreadsheetStore = defineStore('spreadsheet', {
   state: () => ({
     cells: {}, // Flat list of cell objects from DB
+    dirtyCells: {},
     sheets: {},
-    views: [[]],
+
+    views: [],
+    viewSheets: [],
+
     viewRows: [0],
 
     activeView: 0,
+
+    latestSheetId: null,
+
     activeSheetId: null,
     loading: false,
   }),
@@ -63,12 +70,14 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
   getters: {
     getCell: (state) => (s, r, c) => {
       const key = s + '-' + r + '-' + c
-      return state.cells[key] || { value: '', isDirty: false }
+      return state.cells[key] || { value: '', originalValue: '', isDirty: false, id: key }
     },
     getView: (state) => (idx) => {
       const view = []
       state.views[idx]?.forEach((sheet) => {
         view.push(sheet)
+
+      
         // const cols = sheet.cols;
         // const view = [];
         // cols.forEach((cell) => {
@@ -78,7 +87,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       return view
     },
     totalColsCount: (state) => {
-      const view = state.views[state.activeView]
+      const view = state.views[state.activeViewId]
       //if (!view || view.length === 0) return 0
       // We look at the first row to see how many columns it has
       return 20 //view[0]?.length || 20;
@@ -86,6 +95,12 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
   },
 
   actions: {
+
+    addSheetToView(sheetId, viewId) {
+      if (!this.viewSheets[viewId]) this.viewSheets[viewId] = [];
+      this.viewSheets.push(sheetId);
+    },
+
     async fetchSheetSchema() {
       this.loading = true
       const response = await axios.get(`${urlbase}/api/db`)
@@ -104,10 +119,10 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       this.activeSheetId = sheet
     },
 
-    async setMaxSheetId() {
+    async fetchLatestSheetId() {
       // this.loading = true
       // try {
-      //   const response = await axios.get(`${urlbase}/api/sheets/latestId`)
+      const response = await axios.get(`${urlbase}/api/sheets/latestId`)
       //   console.log(response)
       //   const id = response.data == 0 ? 1 : parseInt(response.data) + 1
       //   this.setActiveSheetId(id)
@@ -119,18 +134,23 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       //   this.loading = false
       //   return this.maxSheetId
       // }
+      return response.data;
+
+
     },
 
-    loadCells(apiData) {
-      apiData.forEach((cell) => {
-        const key = `${cell.row_index}-${cell.col_index}`
-        this.cells[key] = {
-          value: cell.content,
-          originalValue: cell.content, // Sync the "truth"
-          isDirty: false,
-        }
-      })
-    },
+    
+
+    // loadCells(apiData) {
+    //   apiData.forEach((cell) => {
+    //     const key = `${cell.row_index}-${cell.col_index}`
+    //     this.cells[key] = {
+    //       value: cell.content,
+    //       originalValue: cell.content, // Sync the "truth"
+    //       isDirty: false,
+    //     }
+    //   })
+    // },
 
     async fetchCells(sheetId) {
       this.loading = true
@@ -144,6 +164,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
           value: cell.value,
           originalValue: cell.value, // Sync the "truth"
           isDirty: false,
+          id: key
         }
       })
 
@@ -187,12 +208,12 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       }
     },
 
-    updateCell(row, col, newValue) {
-      const key = `${row}-${col}`
+    updateCell(sheetId, rowId, colId, newValue) {
+      const key = `${sheetId}-${rowId}-${colId}`
 
       // If the cell doesn't exist in state yet (empty cell being edited)
-      if (!this.cells[key]) {
-        this.cells[key] = { value: '', originalValue: '', isDirty: false }
+      if (!this.cells?.[key]) {
+        this.cells[key] = { value: newValue, originalValue: '', id: sheetId+'-'+rowId+'-'+colId, isDirty: false }
       }
 
       const cell = this.cells[key]

@@ -114,7 +114,7 @@ const getCellBinding = (viewIdx, row, col) => {
   });
 };
 
-const activeView = spreadsheetStore.activeView;
+const activeView = spreadsheetStore.activeViewaId;
 
 // Calculate which rows to show
 const visibleRows = computed(() => {
@@ -149,26 +149,93 @@ const onScroll = (e) => {
   scrollLeft.value = e.target.scrollLeft;
 };
 
+// 1. Add a 'currentlyEditing' state
+const editingKey = ref(''); // format: "row-col"
+
+const handleCellClick = (e, row, col) => {
+
+  console.log(row);
+
+  const sheetId = spreadsheetStore.activeSheetId;
+  const viewId = spreadsheetStore.activeView;
+
+  const view = spreadsheetStore.views[viewId];
+  console.log(view);
+
+  const rowId = row + 1
+  const colId = col + 1
+
+  //spreadsheetStore.updateCell(sheetId, rowId, colId, '');
+  console.log('cell updated')
+
+
+  // console.log(sheetId);
+  // console.log(viewId);
+
+  // console.log('VIEWS: ')
+  // console.log(spreadsheetStore.views);
+
+  // if (view[row] == null) view[row] = []
+  // if (view[row]?.[col] == null) {
+  //   view[row][col] = spreadsheetStore.cells[`${sheetId}-${rowId}-${colId}`];
+  // }
+
+  tempEditValue.value = view[row]?.[col]?.value || '';
+
+
+
+  //console.log("Safe access:", view[row][col]);
+  editingKey.value = `${row}-${col}`;
+};
+
+const updateCell = (e, rowId, colId) => {
+  const newValue = e.value;
+  const sheetId = spreadsheetStore.activeSheetId;
+  const viewId = spreadsheetStore.activeView;
+  spreadsheetStore.updateCell();
+  console.log(sheetId);
+  console.log(viewId);
+  //
+}
+
+
+//spreadsheetStore.views[activeView][rIdx + startIndex][cIdx].value
+
+const hoveredCell = ref(null);
+
+const tempEditValue = ref('');
+
 </script>
 
 <template>
   <div id="spreadsheet-viewport" ref="viewportRef" @scroll="onScroll"
     style="height: 600px; overflow-y: auto; position: relative;">
-    <table class="table table-sm table-warning" style="position: absolute; top: 0; left: 0;"
-      :style="{ transform: `translateY(${offsetY}px)` }">
-      <thead  style="position: absolute; top: 0; z-index: 20; background: white;">
+    <table class="table table-sm table-bordered table-striped" :style="{ transform: `translateY(${offsetY}px)` }">
+      <thead>
         <tr>
-          <td class="cell-spacer" :style="{ paddingLeft: (startColIndex * CELL_WIDTH) + 'px !important' }" style="border: none; width: 0px;"></td>
-          <th style="position: sticky; left: 0; z-index: 30; width: 160px;"> # </th> 
+          <th style="width: 160px;"> ID </th>
           <th v-for="cIdx in (visibleColCount - 1)" style="width: 160px"> Col {{ cIdx }} </th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(row, rIdx) in displayRows" :key="rIdx">
-          <td class="cell-spacer" :style="{ paddingLeft: (startColIndex * CELL_WIDTH) + 'px !important' }" style="border: none; width: 0px;"></td>
-          <th scope="row" :style="{width: CELL_WIDTH + 'px' }">{{ row + startIndex }}</th>
-          <td class="table-cell" v-for="(col, cIdx) in visibleColCount" style="width: 160px;">
-            {{ spreadsheetStore.views[activeView][rIdx + startIndex]?.[cIdx]?.value ?? '' }}
+
+          <th scope="row" :style="{ width: CELL_WIDTH + 'px' }">{{ row + startIndex }}</th>
+
+          <td class="table-cell p-0" v-for="(col, cIdx) in visibleColCount" style="width: 160px;">
+
+            <div :class="{ 'cell-highlight': hoveredCell === cIdx }"
+              @mouseleave="hoveredCell = null" class="cell-wrapper d-block"
+              @click="handleCellClick($event, rIdx + startIndex, cIdx)">
+
+              <input v-if="editingKey == `${rIdx + startIndex}-${cIdx}`" 
+                v-model="tempEditValue"
+               class="inline-editor form-control form-control-sm h-100 border-primary" />
+
+              <span v-else>
+                {{ spreadsheetStore.views[activeView]?.[rIdx + startIndex]?.[cIdx]?.value ?? '' }}
+              </span>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -178,7 +245,6 @@ const onScroll = (e) => {
 
 
 <style scoped>
-
 table {
   table-layout: fixed;
 }
@@ -192,14 +258,29 @@ td.cell-spacer {
   padding-top: 0;
   padding-right: 0;
   padding-bottom: 0;
+
 }
 
 td.table-cell {
   width: 160px !important;
+  height: 5rem !important;
 }
 
 th {
   /* min-width: 5rem; */
+}
+
+.table-cell div {
+  height: 5rem;
+}
+
+input {
+  background-color: transparent;
+}
+
+.cell-highlight {
+  border: blue;
+  border: 1rem 1rem 1rem 1rem;
 }
 
 /*

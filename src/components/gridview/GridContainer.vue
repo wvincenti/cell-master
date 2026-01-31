@@ -7,23 +7,48 @@ import { onMounted, ref } from 'vue'
 //const activeTab = ref(blankSheetId);
 const spreadsheetStore = useSpreadsheetStore();
 
-const onLaunch = () => {
-    spreadsheetStore.setMaxSheetId();
+const onLaunch = async () => {
+    // const maxSheetId = spreadsheetStore.setMaxSheetId();
+    // spreadsheetStore.views.push([]);
+    // console.log(maxSheetId);
+    // spreadsheetStore.addSheetToView();
+
+    // ** SET UP NEWEST SHEET ID 
+    const latestSheetId = await spreadsheetStore.fetchLatestSheetId();
+    console.log(latestSheetId);
+
+    spreadsheetStore.latestSheetId = latestSheetId + 1;
+    console.log(spreadsheetStore.latestSheetId);
+
+
 }
 
 await onLaunch();
 
-const addView = () => {
+const addView = async () => {
+
     spreadsheetStore.views.push([]);
+    console.log(spreadsheetStore.views);
+
+    const newViewId = spreadsheetStore.views.length - 1;
+
+    let newSheetId = await spreadsheetStore.latestSheetId;
+    newSheetId++;
+
+    spreadsheetStore.latestSheetId = newSheetId
+    spreadsheetStore.addSheetToView(newSheetId, newViewId );
     //const latestViewIdx = spreadsheetStore.views.length;
     spreadsheetStore.viewRows.push(0); 
-    spreadsheetStore.setActiveView(spreadsheetStore.views.length - 1);
+
+    spreadsheetStore.setActiveSheetId(newSheetId);
+    spreadsheetStore.setActiveView(newViewId);
 }
 
 onMounted(() => {
-
+    // spreadsheetStore.setActiveView(spreadsheetStore.views.length - 1);
     //const sheet = spreadsheetStore.sheets['1'];
     // spreadsheetStore.loadToView( sheet, 0);
+    addView()
 })
 
 const plusButtonHoverd = ref(false);
@@ -58,6 +83,9 @@ const plusButtonHoverd = ref(false);
         </div>
     </div>
     <div class="row border bg-secondary">
+        <div class="col-1">
+            <i class="bi bi-floppy2-fill align-middle text-white" @click="spreadsheetStore.save"></i>
+        </div>
         <div class="col-1">
             <input type="range" step="10" class="form-range align-middle" id="rangeInput" min="0" max="100" value="50">
         </div>
