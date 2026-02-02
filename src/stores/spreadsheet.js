@@ -51,11 +51,15 @@ export function applyJoin(currentRows, layer, allCells) {
 export const useSpreadsheetStore = defineStore('spreadsheet', {
   state: () => ({
     cells: {}, // Flat list of cell objects from DB
+    columns: {}, // {sheetId: [col1, col2, ...], ...}
     dirtyCells: {},
     sheets: {},
 
     views: [],
-    viewSheets: [],
+    viewSheets: [], // [[sheetId1, sheetId2, ...], ...]
+    sheetRanges: [], // [[xStart-Ystart, xEnd-Yend], ...]
+    sheetStarts: [],
+    sheetEnds: [],
 
     viewRows: [0],
 
@@ -77,7 +81,6 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       state.views[idx]?.forEach((sheet) => {
         view.push(sheet)
 
-      
         // const cols = sheet.cols;
         // const view = [];
         // cols.forEach((cell) => {
@@ -95,10 +98,32 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
   },
 
   actions: {
+    addSheetToView(sheetId, viewIdx) {
+      let viewSheet = this.viewSheets[viewIdx]
+      // if view dont exist create view
+      if (!viewSheet) viewSheet = []
+      viewSheet.push(sheetId)
+      // get sheet position
+      const sheetIdx = viewSheet.length - 1
+      return sheetIdx
+    },
 
-    addSheetToView(sheetId, viewId) {
-      if (!this.viewSheets[viewId]) this.viewSheets[viewId] = [];
-      this.viewSheets.push(sheetId);
+    addRangeToViewSheet(viewIdx, sheetIdx, range = null) {
+      // get synced range
+      let sheetRanges = this.sheetRanges[viewIdx]
+      console.log(sheetIdx)
+      if (!sheetRanges) sheetRanges = []
+      try {
+        if (!range) {
+          sheetRanges[sheetIdx] = [undefined, undefined]
+        } else {
+          sheetRanges[sheetIdx] = [range.start, range.end]
+        }
+      } catch (e) {
+        console.log(e)
+      } finally {
+        return sheetRanges[sheetIdx]
+      }
     },
 
     async fetchSheetSchema() {
@@ -134,12 +159,8 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       //   this.loading = false
       //   return this.maxSheetId
       // }
-      return response.data;
-
-
+      return response.data
     },
-
-    
 
     // loadCells(apiData) {
     //   apiData.forEach((cell) => {
@@ -164,7 +185,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
           value: cell.value,
           originalValue: cell.value, // Sync the "truth"
           isDirty: false,
-          id: key
+          id: key,
         }
       })
 
@@ -183,6 +204,34 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       console.log(row)
       console.log(viewIdx)
       console.log(this.views[viewIdx])
+    },
+
+    async flushSheet(sheetId = this.activeSheetId, vIdx = this.activeView) {
+      this.isLoading = true
+      const dirtyCells = []
+      this.views[vIdx].forEach((row) => {
+        row.forEach((el) => {
+          console.log('EL!!!!')
+          console.log(el)
+          const key = el.id.split('-')
+          console.log(key)
+          if (el.isDirty) {
+            dirtyCells.push({
+              sheet_id: sheetId,
+              row_index: key[1],
+              col_index: key[2],
+              content: el.value,
+            })
+            el.isDirty = false;
+          }
+        })
+      })
+
+      console.log('send FLUSH request')
+      console.log(dirtyCells)
+      if (dirtyCells.length > 0) {
+        await axios.post(`${urlbase}/api/cells/saveCells`, { cells: dirtyCells })
+      }
     },
 
     async saveCells() {
@@ -213,7 +262,12 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
       // If the cell doesn't exist in state yet (empty cell being edited)
       if (!this.cells?.[key]) {
-        this.cells[key] = { value: newValue, originalValue: '', id: sheetId+'-'+rowId+'-'+colId, isDirty: false }
+        this.cells[key] = {
+          value: newValue,
+          originalValue: '',
+          id: sheetId + '-' + rowId + '-' + colId,
+          isDirty: false,
+        }
       }
 
       const cell = this.cells[key]
@@ -222,6 +276,24 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       // The "Magic" Logic:
       // If the user types then deletes back to original, it's not dirty anymore!
       cell.isDirty = cell.value !== cell.originalValue
+    },
+
+    checkDirtyCell(viewIdx, x, y) {
+      console.log(viewIdx);
+      const cell = this.views[viewIdx][x][y];
+      // checkCellExists(this.views[viewIdx], x, y);
+      if (cell.value != cell.originalValue) {
+        cell.isDirty = true
+        cell.originalValue = cell.value
+      }
+    },
+
+    checkCellExists(view, x, y) {
+      if (view[x] == null) view[x] = []
+      if (view[x]?.[y] == null) {
+        view[x][y] = this.cells[cellKey]
+        console.log(view[x][y])
+      }
     },
   },
 

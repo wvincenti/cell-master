@@ -30,18 +30,26 @@ const addView = async () => {
     spreadsheetStore.views.push([]);
     console.log(spreadsheetStore.views);
 
-    const newViewId = spreadsheetStore.views.length - 1;
+    const newViewIdx = spreadsheetStore.views.length - 1;
 
-    let newSheetId = await spreadsheetStore.latestSheetId;
+    let newSheetId = spreadsheetStore.latestSheetId || await spreadsheetStore.latestSheetId;
     newSheetId++;
 
     spreadsheetStore.latestSheetId = newSheetId
-    spreadsheetStore.addSheetToView(newSheetId, newViewId );
-    //const latestViewIdx = spreadsheetStore.views.length;
-    spreadsheetStore.viewRows.push(0); 
 
+    let sheetIdx = spreadsheetStore.addSheetToView(newSheetId, newViewIdx);
+   
+
+    //const latestViewIdx = spreadsheetStore.views.length;
+
+    const range = spreadsheetStore.addRangeToViewSheet(newViewIdx, sheetIdx);
+
+    console.log(range);
+
+    spreadsheetStore.viewRows.push(0); 
     spreadsheetStore.setActiveSheetId(newSheetId);
-    spreadsheetStore.setActiveView(newViewId);
+    spreadsheetStore.setActiveView(newViewIdx);
+ 
 }
 
 onMounted(() => {
@@ -57,7 +65,7 @@ const plusButtonHoverd = ref(false);
 
 <template>
     <div class="row" style="">
-        <div class="col">
+        <div class="col px-0">
             <nav>
                 <div class="nav nav-tabs" role="tablist">
                     <button class="nav-link border-0">
@@ -84,7 +92,7 @@ const plusButtonHoverd = ref(false);
     </div>
     <div class="row border bg-secondary">
         <div class="col-1">
-            <i class="bi bi-floppy2-fill align-middle text-white" @click="spreadsheetStore.save"></i>
+            <i class="bi bi-floppy2-fill align-middle text-white z-3" @click="spreadsheetStore.flushSheet()"></i>
         </div>
         <div class="col-1">
             <input type="range" step="10" class="form-range align-middle" id="rangeInput" min="0" max="100" value="50">

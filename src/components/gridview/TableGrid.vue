@@ -16,6 +16,8 @@ const props = defineProps({
   idx: { type: Number, default: 0 }
 })
 
+
+
 const containerHeight = 600; // Height of your visible area
 const viewportRef = ref(null);
 const containerWidth = ref(0);
@@ -32,7 +34,8 @@ const updateWidth = () => {
   }
 };
 
-const CELL_WIDTH = 160; // Fixed width for now
+const CELL_WIDTH = 10; // Fixed width for now
+const ROW_ID_WIDTH = 2;
 const scrollLeft = ref(0);
 
 // 1. Where do we start drawing columns?
@@ -152,12 +155,59 @@ const onScroll = (e) => {
 // 1. Add a 'currentlyEditing' state
 const editingKey = ref(''); // format: "row-col"
 
+const addCellToView = (viewId, x, y, cellKey) => {
+
+  console.log(cellKey)
+  const view = spreadsheetStore.views[viewId];
+
+  const cellId = cellKey.split('-');
+  console.log(cellId);
+
+  if (!spreadsheetStore.cells?.[cellKey]) spreadsheetStore.updateCell(cellId[0], cellId[1], cellId[2], '');
+
+  // const rowId = row + 1
+  // const colId = col + 1
+
+  console.log('cell updated')
+
+
+  console.log(x);
+  console.log(y);
+
+  console.log('VIEWS: ')
+  console.log(spreadsheetStore.views);
+
+  if (view[x] == null) view[x] = [];
+  if (view[x]?.[y] == null) {
+    view[x][y] = spreadsheetStore.cells[cellKey];
+    console.log(view[x][y]);
+  }
+
+  setTimeout(() => {
+       editingKey.value = `${x}-${y}`;
+  }, 0)
+
+
+}
+
+const handleFocusout = (e, row, col ) => {
+  const inputValue = spreadsheetStore.views[props.viewIdx][row][col].value;
+  console.log(inputValue);
+  spreadsheetStore.checkDirtyCell(spreadsheetStore.activeView, row, col);
+  tempEditValue.value = '';
+  //spreadsheetStore.views[activeView]?.[rIdx + startIndex]?.[cIdx].value = tempEditValue.value;
+
+}
+
 const handleCellClick = (e, row, col) => {
 
   console.log(row);
 
+  //look into view ranges
   const sheetId = spreadsheetStore.activeSheetId;
   const viewId = spreadsheetStore.activeView;
+
+  
 
   const view = spreadsheetStore.views[viewId];
   console.log(view);
@@ -165,8 +215,15 @@ const handleCellClick = (e, row, col) => {
   const rowId = row + 1
   const colId = col + 1
 
+  console.log(sheetId);
+  console.log(rowId);
+  console.log(colId);
+
   //spreadsheetStore.updateCell(sheetId, rowId, colId, '');
   console.log('cell updated')
+  addCellToView(viewId, row, col, sheetId+'-'+rowId+'-'+colId);
+
+
 
 
   // console.log(sheetId);
@@ -180,12 +237,12 @@ const handleCellClick = (e, row, col) => {
   //   view[row][col] = spreadsheetStore.cells[`${sheetId}-${rowId}-${colId}`];
   // }
 
-  tempEditValue.value = view[row]?.[col]?.value || '';
+  //tempEditValue.value = view[row]?.[col]?.value || '';
 
 
 
   //console.log("Safe access:", view[row][col]);
-  editingKey.value = `${row}-${col}`;
+ 
 };
 
 const updateCell = (e, rowId, colId) => {
@@ -205,6 +262,28 @@ const hoveredCell = ref(null);
 
 const tempEditValue = ref('');
 
+const vFocus = {
+  mounted: (el) => {
+    // We use a tiny timeout or nextTick to ensure the 
+    // browser is ready to accept focus on the new element
+    setTimeout(() => {
+      el.focus();
+      if (el instanceof HTMLInputElement) {
+        el.select(); // This selects the text so the user can type over it
+      }
+    }, 0);
+  }
+};
+
+const mappedCell = computed(() => {
+  const sheetId = spreadsheetStore.activeSheetId;
+  
+  const range = spreadsheetStore.viewRanges[props.viewIdx];
+  const rangeX = 0;
+  const rangeY = 0; 
+
+})
+
 </script>
 
 <template>
@@ -212,28 +291,32 @@ const tempEditValue = ref('');
     style="height: 600px; overflow-y: auto; position: relative;">
     <table class="table table-sm table-bordered table-striped" :style="{ transform: `translateY(${offsetY}px)` }">
       <thead>
-        <tr>
-          <th style="width: 160px;"> ID </th>
-          <th v-for="cIdx in (visibleColCount - 1)" style="width: 160px"> Col {{ cIdx }} </th>
+        <tr class="table-dark">
+          <th class="row-id col-id text-center"> ID </th>
+          <th v-for="cId in (visibleColCount - 1)" class="col-id text-center"> {{getColLabel(cId)}} </th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(row, rIdx) in displayRows" :key="rIdx">
 
-          <th scope="row" :style="{ width: CELL_WIDTH + 'px' }">{{ row + startIndex }}</th>
+          <th scope="row" class="row-id table-dark text-center align-middle"  v-html="row+startIndex" >
+        
+          </th>
 
-          <td class="table-cell p-0" v-for="(col, cIdx) in visibleColCount" style="width: 160px;">
+          <td class="table-cell p-0" v-for="(col, cIdx) in visibleColCount" :style="{width: CELL_WIDTH +'rem'}" :class="{'table-warning': spreadsheetStore.views[viewIdx]?.[rIdx+startIndex]?.[cIdx]?.isDirty}">
 
             <div :class="{ 'cell-highlight': hoveredCell === cIdx }"
               @mouseleave="hoveredCell = null" class="cell-wrapper d-block"
               @click="handleCellClick($event, rIdx + startIndex, cIdx)">
 
-              <input v-if="editingKey == `${rIdx + startIndex}-${cIdx}`" 
-                v-model="tempEditValue"
-               class="inline-editor form-control form-control-sm h-100 border-primary" />
+              <input v-focus v-if="editingKey == `${rIdx + startIndex}-${cIdx}`"
+                v-model="spreadsheetStore.views[viewIdx][rIdx+startIndex][cIdx].value"
+                @focusout="handleFocusout($event, rIdx + startIndex, cIdx)"
+              
+               class="inline-editor form-control form-control-sm h-100 border-warning" />
 
               <span v-else>
-                {{ spreadsheetStore.views[activeView]?.[rIdx + startIndex]?.[cIdx]?.value ?? '' }}
+                {{ spreadsheetStore.views[viewIdx]?.[rIdx + startIndex]?.[cIdx]?.value ?? '' }}
               </span>
             </div>
           </td>
@@ -262,12 +345,13 @@ td.cell-spacer {
 }
 
 td.table-cell {
-  width: 160px !important;
+  width: v-bind('CELL_WIDTH+"rem"');
   height: 5rem !important;
 }
 
 th {
   /* min-width: 5rem; */
+  width: v-bind('CELL_WIDTH+"rem"');
 }
 
 .table-cell div {
@@ -281,6 +365,14 @@ input {
 .cell-highlight {
   border: blue;
   border: 1rem 1rem 1rem 1rem;
+}
+
+th.row-id {
+  width: v-bind('ROW_ID_WIDTH+"rem"');
+}
+
+th.col-id {
+  height: 1rem !important;
 }
 
 /*

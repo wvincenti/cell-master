@@ -53,23 +53,35 @@ function getTableId(key) {
 
 const sheetName = computed(() => {
     return spreadsheetStore.sheets[props.sheetKey]?.name ?? 'Table '+props.sheetKey
-})
+});
+
+// const colName = computed(() => {
+//     return spreadsheetStore.sheets[props.sheetKey]?.cols?.name ?? getColLabel()
+// })
+
+console.log(props.sheet);
 
 </script>
 <template >
+
     <div @click="selectedSheet === sheetKey ? selectedSheet = null : selectedSheet = sheetKey"
         class="list-group-item list-group-item-action px-1 d-flex justify-content-between">
+
+        
+
         <InputButton :inputKey="sheetKey" :inputName="sheetName"></InputButton>
-        <span>
-            <button @click.stop="loadCellsToView" class="btn btn-sm btn-primary rounded-circle">
+        
+        <div class="btn-group brn-group-sm">
+            <button @click.stop="loadCellsToView" class="btn btn-sm btn-primary ">
                 <i class="bi bi-arrow-down-circle-fill text-success fs-6"></i>
             </button>
-        </span>
+        </div>
     </div>
-    <div class="list-group" :key="sheetKey" v-if="selectedSheet === sheetKey">
+
+    <div class="list-group list-group-flush rounded-0" role="group" :key="sheetKey" v-if="selectedSheet === sheetKey">
         <div v-for="(column, id) in sheet.cols"
-            class="list-group-item list-group-item-action d-flex justify-content-between">
-            <InputButton :inputName="column.name" :inputKey="'col-' + id"></InputButton>
+            class="list-group-item list-group-item-action d-flex justify-content-between list-group-item-secondary">
+            <InputButton :inputName="column.name || getColLabel(column.id)" :inputKey="'col-' + id"></InputButton>
         </div>
     </div>
 </template>
