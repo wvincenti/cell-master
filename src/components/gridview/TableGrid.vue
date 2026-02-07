@@ -35,8 +35,11 @@ const updateWidth = () => {
 };
 
 const CELL_WIDTH = 10; // Fixed width for now
+const CELL_HEIGHT = 4;
 const ROW_ID_WIDTH = 2;
 const scrollLeft = ref(0);
+
+const remPixels = parseFloat(getComputedStyle(document.documentElement).fontSize);
 
 // 1. Where do we start drawing columns?
 const startColIndex = computed(() => {
@@ -135,7 +138,7 @@ const displayRows = computed(() => {
 
 
 const startIndex = computed(() => {
-  return Math.floor(scrollTop.value / rowHeight);
+  return Math.floor((scrollTop.value / (CELL_HEIGHT*remPixels)));
 });
 
 // We need this to keep the scrollbar at the right "size"
@@ -147,9 +150,10 @@ const offsetY = ref(0);
 
 const onScroll = (e) => {
   scrollTop.value = e.target.scrollTop;
+  console.log(scrollTop.value)
   // Move the table so it starts exactly at the top of the first visible row
   offsetY.value = Math.floor(scrollTop.value / rowHeight) * rowHeight;
-  scrollLeft.value = e.target.scrollLeft;
+  //scrollLeft.value = e.target.scrollLeft;
 };
 
 // 1. Add a 'currentlyEditing' state
@@ -157,7 +161,7 @@ const editingKey = ref(''); // format: "row-col"
 
 const addCellToView = (viewId, x, y, cellKey) => {
 
-  console.log(cellKey)
+  console.log(cellKey);
   const view = spreadsheetStore.views[viewId];
 
   const cellId = cellKey.split('-');
@@ -168,7 +172,7 @@ const addCellToView = (viewId, x, y, cellKey) => {
   // const rowId = row + 1
   // const colId = col + 1
 
-  console.log('cell updated')
+  console.log('cell updated');
 
 
   console.log(x);
@@ -181,33 +185,40 @@ const addCellToView = (viewId, x, y, cellKey) => {
   if (view[x]?.[y] == null) {
     view[x][y] = spreadsheetStore.cells[cellKey];
     console.log(view[x][y]);
+    console.log(view[x]);
   }
 
   setTimeout(() => {
-       editingKey.value = `${x}-${y}`;
-  }, 0)
-
+    editingKey.value = `${x}-${y}`;
+  }, 0);
 
 }
 
-const handleFocusout = (e, row, col ) => {
-  const inputValue = spreadsheetStore.views[props.viewIdx][row][col].value;
+const handleFocusout = (e, x, y) => {
+
+  console.log(startIndex.value);
+  console.log('accessing: '+x+'-'+y)
+  let inputValue = spreadsheetStore.views[props.viewIdx]?.[x]?.[y]?.value;
   console.log(inputValue);
-  spreadsheetStore.checkDirtyCell(spreadsheetStore.activeView, row, col);
+  if (!inputValue) inputValue = '';
+
+  spreadsheetStore.checkDirtyCell(props.viewIdx, x, y);
   tempEditValue.value = '';
   //spreadsheetStore.views[activeView]?.[rIdx + startIndex]?.[cIdx].value = tempEditValue.value;
 
 }
 
 const handleCellClick = (e, row, col) => {
-
+  console.log('row Id: ')
   console.log(row);
+
+  focusedRowIdx.value = row;
 
   //look into view ranges
   const sheetId = spreadsheetStore.activeSheetId;
   const viewId = spreadsheetStore.activeView;
 
-  
+
 
   const view = spreadsheetStore.views[viewId];
   console.log(view);
@@ -221,7 +232,7 @@ const handleCellClick = (e, row, col) => {
 
   //spreadsheetStore.updateCell(sheetId, rowId, colId, '');
   console.log('cell updated')
-  addCellToView(viewId, row, col, sheetId+'-'+rowId+'-'+colId);
+  addCellToView(viewId, row, col, sheetId + '-' + rowId + '-' + colId);
 
 
 
@@ -242,7 +253,7 @@ const handleCellClick = (e, row, col) => {
 
 
   //console.log("Safe access:", view[row][col]);
- 
+
 };
 
 const updateCell = (e, rowId, colId) => {
@@ -277,45 +288,48 @@ const vFocus = {
 
 const mappedCell = computed(() => {
   const sheetId = spreadsheetStore.activeSheetId;
-  
+
   const range = spreadsheetStore.viewRanges[props.viewIdx];
   const rangeX = 0;
-  const rangeY = 0; 
+  const rangeY = 0;
 
 })
+
+const focusedRowIdx = ref(null);
 
 </script>
 
 <template>
   <div id="spreadsheet-viewport" ref="viewportRef" @scroll="onScroll"
-    style="height: 600px; overflow-y: auto; position: relative;">
+    style="overflow-y: scroll; position: relative; max-height: 100%;">
     <table class="table table-sm table-bordered table-striped" :style="{ transform: `translateY(${offsetY}px)` }">
       <thead>
         <tr class="table-dark">
           <th class="row-id col-id text-center"> ID </th>
-          <th v-for="cId in (visibleColCount - 1)" class="col-id text-center"> {{getColLabel(cId)}} </th>
+          <th v-for="cId in (visibleColCount - 1)" class="col-id text-center"> {{ getColLabel(cId) }} </th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(row, rIdx) in displayRows" :key="rIdx">
-
-          <th scope="row" class="row-id table-dark text-center align-middle"  v-html="row+startIndex" >
-        
+        <tr v-for="(row, rIdx) in displayRows" :key="`row-${rIdx + startIndex}`">
+          <th scope="row" class="row-id table-dark text-center align-middle" v-html="row + startIndex" :key="`${viewIdx}-${rIdx+startIndex}-id`">
           </th>
+          <td 
+            class="table-cell p-0" v-for="(col, cIdx) in visibleColCount" :style="{ width: CELL_WIDTH + 'rem' }"
+            :key="`${viewIdx}-${rIdx+startIndex}-${cIdx}`"
+            :class="{ 'table-warning': spreadsheetStore.views[viewIdx]?.[rIdx + startIndex]?.[cIdx]?.isDirty }">
 
-          <td class="table-cell p-0" v-for="(col, cIdx) in visibleColCount" :style="{width: CELL_WIDTH +'rem'}" :class="{'table-warning': spreadsheetStore.views[viewIdx]?.[rIdx+startIndex]?.[cIdx]?.isDirty}">
-
-            <div :class="{ 'cell-highlight': hoveredCell === cIdx }"
-              @mouseleave="hoveredCell = null" class="cell-wrapper d-block"
-              @click="handleCellClick($event, rIdx + startIndex, cIdx)">
+            <div 
+              :key="`${viewIdx}-${rIdx+startIndex}-${cIdx}-wrapper`"
+              :class="{ 'cell-highlight': hoveredCell === cIdx }" @mouseleave="hoveredCell = null"
+              class="cell-wrapper d-block" @click="handleCellClick($event, rIdx + startIndex, cIdx)">
 
               <input v-focus v-if="editingKey == `${rIdx + startIndex}-${cIdx}`"
-                v-model="spreadsheetStore.views[viewIdx][rIdx+startIndex][cIdx].value"
-                @focusout="handleFocusout($event, rIdx + startIndex, cIdx)"
-              
-               class="inline-editor form-control form-control-sm h-100 border-warning" />
+                :key="`${viewIdx}-${rIdx+startIndex}-${cIdx}-input`"
+                v-model="spreadsheetStore.views[viewIdx][rIdx + startIndex][cIdx].value"
+                @blur="handleFocusout($event, focusedRowIdx, cIdx)"
+                class="inline-editor form-control form-control-sm h-100 border-warning rounded-0" />
 
-              <span v-else>
+              <span v-else :key="`${viewIdx}-${rIdx+startIndex}-${cIdx}-span`">
                 {{ spreadsheetStore.views[viewIdx]?.[rIdx + startIndex]?.[cIdx]?.value ?? '' }}
               </span>
             </div>
@@ -328,6 +342,10 @@ const mappedCell = computed(() => {
 
 
 <style scoped>
+.form-control:focus {
+  box-shadow: none;
+}
+
 table {
   table-layout: fixed;
 }
@@ -345,17 +363,18 @@ td.cell-spacer {
 }
 
 td.table-cell {
-  width: v-bind('CELL_WIDTH+"rem"');
-  height: 5rem !important;
+  width: v-bind('CELL_WIDTH + "rem"');
+  height: v-bind('CELL_HEIGHT+"rem"');
 }
 
 th {
   /* min-width: 5rem; */
-  width: v-bind('CELL_WIDTH+"rem"');
+  width: v-bind('CELL_WIDTH + "rem"');
 }
 
+
 .table-cell div {
-  height: 5rem;
+  height: 100%;
 }
 
 input {
@@ -368,7 +387,7 @@ input {
 }
 
 th.row-id {
-  width: v-bind('ROW_ID_WIDTH+"rem"');
+  width: v-bind('ROW_ID_WIDTH + "rem"');
 }
 
 th.col-id {

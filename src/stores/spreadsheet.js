@@ -280,9 +280,10 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
     checkDirtyCell(viewIdx, x, y) {
       console.log(viewIdx);
-      const cell = this.views[viewIdx][x][y];
-      // checkCellExists(this.views[viewIdx], x, y);
-      if (cell.value != cell.originalValue) {
+      const cell = this.views[viewIdx]?.[x]?.[y];
+      if (!cell) return;
+      this.checkCellExists(this.views[viewIdx], x, y);
+      if (cell?.value != cell?.originalValue) {
         cell.isDirty = true
         cell.originalValue = cell.value
       }

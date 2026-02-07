@@ -71,9 +71,12 @@ console.log(props.sheet);
 
         <InputButton :inputKey="sheetKey" :inputName="sheetName"></InputButton>
         
-        <div class="btn-group brn-group-sm">
-            <button @click.stop="loadCellsToView" class="btn btn-sm btn-primary ">
-                <i class="bi bi-arrow-down-circle-fill text-success fs-6"></i>
+        <div class="btn-group btn-group-sm">
+            <button @click.stop="loadCellsToView" class="btn btn-sm btn-outline-primary ">
+                <i class="bi bi-arrow-down align-middle"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-plus-lg align-middle"></i>
             </button>
         </div>
     </div>
