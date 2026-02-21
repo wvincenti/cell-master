@@ -1,22 +1,24 @@
 <script setup>
 import { getColLabel, useSpreadsheetStore } from '@/stores/spreadsheet';
-import { h, onMounted, onUnmounted, ref } from 'vue';
-import Cell from './Cell.vue';
-import { watch } from 'vue';
+import { onBeforeUpdate, onMounted, onUnmounted, ref } from 'vue';
 import { computed } from 'vue';
 
 const spreadsheetStore = useSpreadsheetStore();
 
 const props = defineProps({
-  cols: { type: Number, default: 27 },
+  //cols: { type: Number, default: 27 },
   rows: { type: Number, default: 12 },
   tableId: { type: Number, default: null },
   sheet: { type: Object, default: {} },
   viewIdx: { type: Number, default: 0 },
-  idx: { type: Number, default: 0 }
+  //idx: { type: Number, default: 0 },
+  data: {type: Array, default: []}
 })
 
 
+// const viewIdx = computed(() => {
+//   return spreadsheetStore.activeView;
+// }) 
 
 const containerHeight = 600; // Height of your visible area
 const viewportRef = ref(null);
@@ -53,22 +55,25 @@ const visibleColCount = computed(() => {
   return Math.ceil(containerWidth.value / CELL_WIDTH) + 2;
 });
 
-const displayCols = computed(() => {
-  const start = startColIndex.value;
-  const end = start + visibleColCount.value + 2; // +2 for "over-scanning" buffer
+// const displayCols = computed(() => {
+//   const start = startColIndex.value;
+//   const end = start + visibleColCount.value + 2; // +2 for "over-scanning" buffer
 
 
-  const result = [];
-  const length = end - start;
-  for (let i = 0; i < length; i++) {
-    const idx = start + i;
-    if (idx < spreadsheetStore.totalColsCount) {
-      result.push(idx);
-    }
-  }
-  console.log(result);
-  return result;
-});
+//   const result = [];
+//   const length = end - start;
+//   for (let i = 0; i < length; i++) {
+//     const idx = start + i;
+//     if (idx < spreadsheetStore.totalColsCount) {
+//       result.push(idx);
+//     }
+//   }
+//   console.log(result);
+//   return result;
+// });
+onBeforeUpdate(() => {
+  console.log('about to update gid n: '+props.viewIdx);
+})
 
 onMounted(() => {
   // if (tableHeader.value) {
@@ -85,27 +90,6 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateWidth);
 });
 
-
-
-const getCellData = (r, c) => {
-  const key = r + '-' + c;
-  return spreadsheetStore.cells[key] || { value: '', isDirty: false }
-}
-
-const onInput = (event, r, c) => {
-  spreadsheetStore.updateCell(r, c, event.target.value);
-}
-
-const onSheetSelect = (event, id, name = null) => {
-  spreadsheetStore.setActiveSheetId(id);
-}
-
-const addSheet = (name = null) => {
-  const newMaxId = spreadsheetStore.maxSheetId + 1;
-  spreadsheetStore.addSheet({ id: newMaxId, name: name });
-  spreadsheetStore.maxSheetId = newMaxId;
-  spreadsheetStore.setActiveSheetId(newMaxId);
-}
 
 const getCellBinding = (viewIdx, row, col) => {
   return computed({
@@ -208,7 +192,10 @@ const handleFocusout = (e, x, y) => {
 
 }
 
+const viewInputIdx = ref(null);
+
 const handleCellClick = (e, row, col) => {
+  viewInputIdx.value = props.viewIdx;
   console.log('row Id: ')
   console.log(row);
 
@@ -216,11 +203,11 @@ const handleCellClick = (e, row, col) => {
 
   //look into view ranges
   const sheetId = spreadsheetStore.activeSheetId;
-  const viewId = spreadsheetStore.activeView;
+  //const viewId = spreadsheetStore.activeView;
 
 
-
-  const view = spreadsheetStore.views[viewId];
+  console.log("VIEW: ");
+  const view = spreadsheetStore.views[props.viewIdx];
   console.log(view);
 
   const rowId = row + 1
@@ -232,27 +219,7 @@ const handleCellClick = (e, row, col) => {
 
   //spreadsheetStore.updateCell(sheetId, rowId, colId, '');
   console.log('cell updated')
-  addCellToView(viewId, row, col, sheetId + '-' + rowId + '-' + colId);
-
-
-
-
-  // console.log(sheetId);
-  // console.log(viewId);
-
-  // console.log('VIEWS: ')
-  // console.log(spreadsheetStore.views);
-
-  // if (view[row] == null) view[row] = []
-  // if (view[row]?.[col] == null) {
-  //   view[row][col] = spreadsheetStore.cells[`${sheetId}-${rowId}-${colId}`];
-  // }
-
-  //tempEditValue.value = view[row]?.[col]?.value || '';
-
-
-
-  //console.log("Safe access:", view[row][col]);
+  addCellToView(props.viewIdx, row, col, sheetId + '-' + rowId + '-' + colId);
 
 };
 
@@ -286,16 +253,9 @@ const vFocus = {
   }
 };
 
-const mappedCell = computed(() => {
-  const sheetId = spreadsheetStore.activeSheetId;
-
-  const range = spreadsheetStore.viewRanges[props.viewIdx];
-  const rangeX = 0;
-  const rangeY = 0;
-
-})
-
 const focusedRowIdx = ref(null);
+
+
 
 </script>
 
@@ -305,14 +265,15 @@ const focusedRowIdx = ref(null);
     <table class="table table-sm table-bordered table-striped" :style="{ transform: `translateY(${offsetY}px)` }">
       <thead>
         <tr class="table-dark">
-          <th class="row-id col-id text-center"> ID </th>
-          <th v-for="cId in (visibleColCount - 1)" class="col-id text-center"> {{ getColLabel(cId) }} </th>
+          <th class="row-id col-id text-center "> </th>
+          <th v-for="cId in (visibleColCount - 1)" class="col-id text-center lead"> {{ getColLabel(cId) }} </th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="(row, rIdx) in displayRows" :key="`row-${rIdx + startIndex}`">
-          <th scope="row" class="row-id table-dark text-center align-middle" v-html="row + startIndex" :key="`${viewIdx}-${rIdx+startIndex}-id`">
+          <th scope="row" class="row-id table-dark text-center align-middle lead" v-html="row + startIndex" :key="`${viewIdx}-${rIdx+startIndex}-id`">
           </th>
+
           <td 
             class="table-cell p-0" v-for="(col, cIdx) in visibleColCount" :style="{ width: CELL_WIDTH + 'rem' }"
             :key="`${viewIdx}-${rIdx+startIndex}-${cIdx}`"
@@ -323,16 +284,17 @@ const focusedRowIdx = ref(null);
               :class="{ 'cell-highlight': hoveredCell === cIdx }" @mouseleave="hoveredCell = null"
               class="cell-wrapper d-block" @click="handleCellClick($event, rIdx + startIndex, cIdx)">
 
-              <input v-focus v-if="editingKey == `${rIdx + startIndex}-${cIdx}`"
-                :key="`${viewIdx}-${rIdx+startIndex}-${cIdx}-input`"
+              <input v-focus v-if="editingKey == `${rIdx + startIndex}-${cIdx}` && viewInputIdx == viewIdx"
+                :key="`${viewIdx}-${rIdx}-${cIdx}-input`"
                 v-model="spreadsheetStore.views[viewIdx][rIdx + startIndex][cIdx].value"
                 @blur="handleFocusout($event, focusedRowIdx, cIdx)"
                 class="inline-editor form-control form-control-sm h-100 border-warning rounded-0" />
 
-              <span v-else :key="`${viewIdx}-${rIdx+startIndex}-${cIdx}-span`">
-                {{ spreadsheetStore.views[viewIdx]?.[rIdx + startIndex]?.[cIdx]?.value ?? '' }}
+              <span v-else :key="`${viewIdx}-${rIdx}-${cIdx}-span`">
+                {{ spreadsheetStore.views?.[viewIdx]?.[rIdx + startIndex]?.[cIdx]?.value ?? '' }}
               </span>
             </div>
+
           </td>
         </tr>
       </tbody>
@@ -388,10 +350,13 @@ input {
 
 th.row-id {
   width: v-bind('ROW_ID_WIDTH + "rem"');
+  font-size: small;
 }
 
-th.col-id {
-  height: 1rem !important;
+.col-id {
+  height: 0.5px !important;
+  font-size: small;
+
 }
 
 /*

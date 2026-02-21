@@ -38,6 +38,7 @@ const loadCellsToView = async () => {
                 viewRow.push(spreadsheetStore.cells[sheetId + '-' + row + '-' + col])
             }
             spreadsheetStore.loadRowToView(viewRow, viewIdx);
+            
         }
     }
     catch (e) {

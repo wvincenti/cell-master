@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { shallowRef } from 'vue'
 import axios from 'axios'
 
 const urlbase = import.meta.env.VITE_API_URL
@@ -19,55 +20,23 @@ export const getColLabel = (n) => {
   return label
 }
 
-/**
- * @param {Array[]} currentRows - The 2D array of cells we have so far
- * @param {Object} layer - The join instructions { sheetId, onCol, targetCol }
- * @param {Object} allCells - The flat state.cells from your store
- */
-export function applyJoin(currentRows, layer, allCells) {
-  // 1. Convert the target sheet into a searchable 2D array first
-  const targetSheetData = this.getSheetAsArray(layer.sheetId)
-
-  return currentRows.map((row) => {
-    // 2. Get the value we are joining ON from the current row
-    // (Assuming layer.onCol is the index)
-    const joinValue = row[layer.onCol]?.value
-
-    // 3. Find the matching row in the target sheet
-    const matchingRow = targetSheetData.find(
-      (targetRow) => targetRow[layer.targetCol]?.value === joinValue,
-    )
-
-    // 4. If match found, merge them. If not, append empty cells to keep row length consistent
-    if (matchingRow) {
-      return [...row, ...matchingRow]
-    } else {
-      const emptyCells = new Array(targetSheetData[0]?.length || 0).fill({ value: '' })
-      return [...row, ...emptyCells]
-    }
-  })
-}
-
 export const useSpreadsheetStore = defineStore('spreadsheet', {
   state: () => ({
-    cells: {}, // Flat list of cell objects from DB
     columns: {}, // {sheetId: [col1, col2, ...], ...}
     dirtyCells: {},
     sheets: {},
 
-    views: [],
-    viewSheets: [], // [[sheetId1, sheetId2, ...], ...]
-    sheetRanges: [], // [[xStart-Ystart, xEnd-Yend], ...]
-    sheetStarts: [],
-    sheetEnds: [],
+    cellTables: [],
 
-    viewRows: [0],
+    tableCount: 0,
+
+    activeTab: 0,
 
     activeView: 0,
 
     latestSheetId: null,
 
-    activeSheetId: null,
+    activeSheetIdx: null,
     loading: false,
   }),
 
@@ -89,41 +58,37 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       })
       return view
     },
-    totalColsCount: (state) => {
-      const view = state.views[state.activeViewId]
-      //if (!view || view.length === 0) return 0
-      // We look at the first row to see how many columns it has
-      return 20 //view[0]?.length || 20;
+    getTable: (state) => (idx) => {
+      return state.cellTables[idx]
     },
   },
 
   actions: {
-    addSheetToView(sheetId, viewIdx) {
-      let viewSheet = this.viewSheets[viewIdx]
-      // if view dont exist create view
-      if (!viewSheet) viewSheet = []
-      viewSheet.push(sheetId)
-      // get sheet position
-      const sheetIdx = viewSheet.length - 1
-      return sheetIdx
-    },
-
-    addRangeToViewSheet(viewIdx, sheetIdx, range = null) {
-      // get synced range
-      let sheetRanges = this.sheetRanges[viewIdx]
-      console.log(sheetIdx)
-      if (!sheetRanges) sheetRanges = []
-      try {
-        if (!range) {
-          sheetRanges[sheetIdx] = [undefined, undefined]
-        } else {
-          sheetRanges[sheetIdx] = [range.start, range.end]
+    addEmptySheet() {
+      console.time('DataCreation')
+      //const updatedSheets = [...this.cellTables];
+      const newSheetIdx = this.cellTables.length
+      const sheet = []
+      for (let i = 0; i < 20; i++) {
+        sheet[i] = {}
+        for (let j = 0; j < 26; j++) {
+          sheet[i][`${j}`] = 'Sheet: ' + newSheetIdx + ' Row: ' + i + ' Col: ' + j
         }
-      } catch (e) {
-        console.log(e)
-      } finally {
-        return sheetRanges[sheetIdx]
       }
+
+      console.timeEnd('DataCreation')
+
+      console.time('StoreUpdate')
+      //this.cellTables.push(sheet);
+      console.timeEnd('StoreUpdate')
+
+      //updatedSheets.push(sheet);
+      this.cellTables.push(sheet);
+      this.tableCount++;
+
+      this.activeTab = newSheetIdx;
+
+      console.log(this.cellTables)
     },
 
     async fetchSheetSchema() {
@@ -136,8 +101,14 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       this.loading = false
     },
 
+    setActiveTab(tabIdx) {
+		this.activeTab = tabIdx;
+    this.activeTable = this.cellTables[tabIdx];
+	},
+
     setActiveView(viewIdx) {
       this.activeView = viewIdx
+      console.log('ACTIVE VIEW: ' + this.activeView)
     },
 
     setActiveSheetId(sheet) {
@@ -145,65 +116,40 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
     },
 
     async fetchLatestSheetId() {
-      // this.loading = true
-      // try {
       const response = await axios.get(`${urlbase}/api/sheets/latestId`)
-      //   console.log(response)
-      //   const id = response.data == 0 ? 1 : parseInt(response.data) + 1
-      //   this.setActiveSheetId(id)
-      //   this.maxSheetId = id
-      //   console.log(id)
-      // } catch (err) {
-      //   console.log(err)
-      // } finally {
-      //   this.loading = false
-      //   return this.maxSheetId
-      // }
+
+      console.log('LATEST SHEET ID: ' + response.data)
+
+      this.latestSheetId = response.data
+
       return response.data
     },
-
-    // loadCells(apiData) {
-    //   apiData.forEach((cell) => {
-    //     const key = `${cell.row_index}-${cell.col_index}`
-    //     this.cells[key] = {
-    //       value: cell.content,
-    //       originalValue: cell.content, // Sync the "truth"
-    //       isDirty: false,
-    //     }
-    //   })
-    // },
 
     async fetchCells(sheetId) {
       this.loading = true
       const response = await axios.get(`${urlbase}/api/cells/${sheetId}`)
-      response.data.forEach((cell) => {
-        console.log('printing cell')
-        console.log(cell)
-        const ids = cell.id.split('-')
-        const key = sheetId + '-' + ids[1] + '-' + ids[2]
-        this.cells[key] = {
-          value: cell.value,
-          originalValue: cell.value, // Sync the "truth"
-          isDirty: false,
-          id: key,
-        }
-      })
 
-      console.log(sheetId)
+      this.cellTables.push(response.data)
+
+      console.log(response)
+
+      // response.data.forEach((cell) => {
+      //   console.log('printing cell')
+      //   console.log(cell)
+      //   const ids = cell.id.split('-')
+      //   const key = sheetId + '-' + ids[1] + '-' + ids[2]
+      //   this.cells[key] = {
+      //     value: cell.value,
+      //     originalValue: cell.value, // Sync the "truth"
+      //     isDirty: false,
+      //     id: key,
+      //     col_id: key[2]
+      //   }
+      // })
+
+      //console.log(sheetId)
 
       this.loading = false
-    },
-
-    loadRowToView(row, viewIdx) {
-      const lastRow = this.viewRows[viewIdx]
-      const nextRow = lastRow + 1
-
-      this.views[viewIdx][nextRow] = row
-      this.viewRows[viewIdx] = nextRow
-
-      console.log(row)
-      console.log(viewIdx)
-      console.log(this.views[viewIdx])
     },
 
     async flushSheet(sheetId = this.activeSheetId, vIdx = this.activeView) {
@@ -222,7 +168,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
               col_index: key[2],
               content: el.value,
             })
-            el.isDirty = false;
+            el.isDirty = false
           }
         })
       })
@@ -257,48 +203,8 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       }
     },
 
-    updateCell(sheetId, rowId, colId, newValue) {
-      const key = `${sheetId}-${rowId}-${colId}`
-
-      // If the cell doesn't exist in state yet (empty cell being edited)
-      if (!this.cells?.[key]) {
-        this.cells[key] = {
-          value: newValue,
-          originalValue: '',
-          id: sheetId + '-' + rowId + '-' + colId,
-          isDirty: false,
-        }
-      }
-
-      const cell = this.cells[key]
-      cell.value = newValue
-
-      // The "Magic" Logic:
-      // If the user types then deletes back to original, it's not dirty anymore!
-      cell.isDirty = cell.value !== cell.originalValue
+    async updateName(name, tableName, id) {
+      await axios.post(`${urlbase}/api/updateName`, { id: id, name: name, table_name: tableName })
     },
-
-    checkDirtyCell(viewIdx, x, y) {
-      console.log(viewIdx);
-      const cell = this.views[viewIdx]?.[x]?.[y];
-      if (!cell) return;
-      this.checkCellExists(this.views[viewIdx], x, y);
-      if (cell?.value != cell?.originalValue) {
-        cell.isDirty = true
-        cell.originalValue = cell.value
-      }
-    },
-
-    checkCellExists(view, x, y) {
-      if (view[x] == null) view[x] = []
-      if (view[x]?.[y] == null) {
-        view[x][y] = this.cells[cellKey]
-        console.log(view[x][y])
-      }
-    },
-  },
-
-  async updateName(name, tableName, id) {
-    await axios.post(`${urlbase}/api/updateName`, { id: id, name: name, table_name: tableName })
   },
 })

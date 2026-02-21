@@ -5,12 +5,10 @@ import { useSpreadsheetStore } from '@/stores/spreadsheet';
 
   const spreadsheetStore = useSpreadsheetStore();
 
-
-
 </script>
 
 <template>
-        <div class="col-6">
+    <div class="col-6">
         <div class="card">
             <div class="card-body">
                 <div class="card-title">Sheets</div>
@@ -18,7 +16,7 @@ import { useSpreadsheetStore } from '@/stores/spreadsheet';
                 <div class="list-group">
                     <ListGroupItem v-for="(sheet, key, index) in spreadsheetStore.views" 
                     :key="key"
-                    v-if=" spreadsheetStore?.views.length > 0"
+  
                     :sheet="sheet"
                     :sheetKey="key">
                     </ListGroupItem>

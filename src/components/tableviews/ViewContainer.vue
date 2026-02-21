@@ -3,9 +3,6 @@ import { useSpreadsheetStore } from '@/stores/spreadsheet';
 import ViewCard from './ViewCard.vue';
 
 
-  
-
-    
 </script>
 
 <template>

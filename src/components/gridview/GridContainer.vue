@@ -1,110 +1,122 @@
 <script setup>
-import TableGrid from './TableGrid.vue';
-import GridControls from './GridControls.vue';
+import { onMounted, ref, computed, onBeforeUpdate, onBeforeMount, onUpdated } from 'vue';
 import { useSpreadsheetStore } from '@/stores/spreadsheet';
-import { onMounted, ref } from 'vue';
 
+import ToolbarWrapper from './ToolbarWrapper.vue';
+import TabWrapper from './TabWrapper.vue';
+
+
+const props = {
+    containerHeight: { type: Number }
+}
+
+
+
+console.log('GRID HEIGHT: ' + props.containerHeight);
 
 //const activeTab = ref(blankSheetId);
 const spreadsheetStore = useSpreadsheetStore();
 
-const onLaunch = async () => {
-    // const maxSheetId = spreadsheetStore.setMaxSheetId();
-    // spreadsheetStore.views.push([]);
-    // console.log(maxSheetId);
-    // spreadsheetStore.addSheetToView();
+const viewportRef = ref(null);
 
-    // ** SET UP NEWEST SHEET ID 
-    const latestSheetId = await spreadsheetStore.fetchLatestSheetId();
-    console.log(latestSheetId);
+// const addView = async () => {
 
-    spreadsheetStore.latestSheetId = latestSheetId + 1;
-    console.log(spreadsheetStore.latestSheetId);
+//     spreadsheetStore.views.push([]);
+//     console.log(spreadsheetStore.views);
 
+//     const newViewIdx = spreadsheetStore.views.length - 1;
 
-}
+//     let newSheetId = spreadsheetStore.latestSheetId || await spreadsheetStore.latestSheetId;
+//     newSheetId++;
 
-await onLaunch();
+//     spreadsheetStore.latestSheetId = newSheetId;
 
-const addView = async () => {
+//     let sheetIdx = spreadsheetStore.addSheetToView(newSheetId, newViewIdx);
 
-    spreadsheetStore.views.push([]);
-    console.log(spreadsheetStore.views);
+//     //const latestViewIdx = spreadsheetStore.views.length;
 
-    const newViewIdx = spreadsheetStore.views.length - 1;
+//     const range = spreadsheetStore.addRangeToViewSheet(newViewIdx, sheetIdx);
 
-    let newSheetId = spreadsheetStore.latestSheetId || await spreadsheetStore.latestSheetId;
-    newSheetId++;
+//     console.log(range);
 
-    spreadsheetStore.latestSheetId = newSheetId
-
-    let sheetIdx = spreadsheetStore.addSheetToView(newSheetId, newViewIdx);
+//     spreadsheetStore.viewRows.push(0);
+//     spreadsheetStore.setActiveSheetId(newSheetId);
+//     spreadsheetStore.setActiveView(newViewIdx);
+// }
 
 
-    //const latestViewIdx = spreadsheetStore.views.length;
+const updateWidth = () => {
+    if (viewportRef.value) {
+        console.log(viewportRef.value.offsetWidth)
+        containerWidth.value = viewportRef.value.offsetWidth;
+    }
+};
 
-    const range = spreadsheetStore.addRangeToViewSheet(newViewIdx, sheetIdx);
 
-    console.log(range);
+onBeforeMount(() => {
+    spreadsheetStore.addEmptySheet();
+})
 
-    spreadsheetStore.viewRows.push(0);
-    spreadsheetStore.setActiveSheetId(newSheetId);
-    spreadsheetStore.setActiveView(newViewIdx);
+onBeforeUpdate(() => {
+    console.log('UPDATING GRID CONTAINER')
+})
+
+const activeTab = computed(() => spreadsheetStore.activeTab);
+const sheetCount = computed(() => spreadsheetStore.tableCount);
+const tableData = computed(() => spreadsheetStore.cellTables[activeTab.value]);
+
+const height = ref(null);
+
+function setHeight() {
+    const tabList = document.querySelector(".p-tablist");
+    const tabContainer = document.querySelector(".mytab-container");
+    console.log(tabList);
+    console.log(tabContainer.offsetHeight)
+
+    setTimeout(() => {
+        height.value = tabContainer.offsetHeight - tabList.offsetHeight;
+    }, 150);
+
+    
+
+    console.log(height.value);
+    
+
+    
 
 }
 
 onMounted(() => {
-    // spreadsheetStore.setActiveView(spreadsheetStore.views.length - 1);
-    //const sheet = spreadsheetStore.sheets['1'];
-    // spreadsheetStore.loadToView( sheet, 0);
-    addView()
+    setHeight();
 })
-
-const plusButtonHoverd = ref(false);
 
 </script>
 
 <template>
-    <div class="row h-100">
-        <div class="col px-0 h-100">
-            <nav>
-                <div class="nav nav-tabs" role="tablist">
-                    <button class="nav-link border-0">
-                        <i @mouseenter="plusButtonHoverd = true" @mouseleave="plusButtonHoverd = false"
-                            @click="() => addView()" class="bi bi-plus-circle-fill fs-5"
-                            :class="{ 'text-success': plusButtonHoverd == true }"></i>
-                    </button>
-                    <button class="nav-link" v-for="(sheet, idx) in spreadsheetStore.views"
-                        :class="{ 'active': spreadsheetStore.activeView === idx }"
-                        @click="() => spreadsheetStore.setActiveView(idx)">{{ 'View ' + idx }}
-                    </button>
-                </div>
-            </nav>
-            <div class="tab-content h-100">
-                <div class="tab-pane h-100" v-for="(sheet, idx) in spreadsheetStore.views"
-                    :class="{ 'show active': spreadsheetStore.activeView === idx }">
-                    <TableGrid v-if="spreadsheetStore.activeView == idx" :rows="10" :cols="26" :tableId="sheet.id"
-                        :viewIdx="idx">
-                    </TableGrid>
-                </div>
+    <div ref="viewportRef" id="grid-view-container" class="container-fluid h-100">
+        <div ref="containerRow" class="row h-100">
+            <div class="col px-0 mytab-container">
+                <TabWrapper :pt="{class: 'p-0'}" :tableHeight="height" :activeTab="activeTab" :sheetCount="sheetCount" :tableData="tableData" @tab-select="(idx) => spreadsheetStore.setActiveTab(idx)" ></TabWrapper>
             </div>
-        </div>
-    </div>
-    <div class="row border bg-secondary align-items-center" style="height: 20px; z-index: 100;">
-        <div class="col-1">
-            <i class="bi bi-floppy2-fill align-middle text-white z-3" @click="spreadsheetStore.flushSheet()"></i>
-        </div>
-        <div class="col-1">
-            <input type="range" step="10" class="form-range align-middle" id="rangeInput" min="0" max="100" value="50">
         </div>
     </div>
 </template>
 
 <style scoped>
+.p-tabs {
+    display: flex;
+}
+
+
 /*
 .tab-content {
     overflow: scroll;
     max-height: 100%;
 }
     */
+
+
+/* <div v-for="(view, idx) in spreadsheetStore.views" class="tab-pane h-100" :class="{'show active': spreadsheetStore.activeView == idx }">
+                        <TableGrid :key="idx" :viewIdx="idx"></TableGrid>
+                    </div> */
 </style>
