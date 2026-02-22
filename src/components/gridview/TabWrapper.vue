@@ -2,7 +2,7 @@
 import { ref, computed, onBeforeMount, onUpdated, onMounted } from 'vue';
 import { useSpreadsheetStore } from '@/stores/spreadsheet';
 import TableWrapper from './TableWrapper.vue';
-import { Tabs, Tab, TabList, TabPanel, DataTable, Column } from 'primevue';
+import { Tabs, Tab, TabList, TabPanel, DataTable, Column, InputText } from 'primevue';
 
 const props = defineProps({
     activeTab: Number,
@@ -10,6 +10,8 @@ const props = defineProps({
     tableData: Array,
     contHeight: Number,
 })
+
+const mainStore = useSpreadsheetStore();
 
 const tabListRef = ref(null);
 
@@ -49,6 +51,19 @@ function getColLabel(n) {
     return label
 }
 
+function onCellEditComplete(e) {
+
+    let { data, newValue, field } = e;
+    console.log(newValue);
+    console.log(data);
+    console.log(field);
+    const [col, inputValue] = field.split('.');
+    const row = parseInt(data[col]['row']);
+
+    console.log(mainStore.cellTables[props.activeTab][row][col][inputValue]);
+    let oldValue =  mainStore.cellTables[props.activeTab][row][col][inputValue];
+    if (oldValue != newValue) oldValue = newValue;
+}
 
 
 
@@ -64,25 +79,33 @@ function getColLabel(n) {
         </TabList>
         <TabPanels :pt="{ root: { class: 'p-0' } }">
             <TabPanel :value="activeTab">
-                <DataTable :value="tableData" 
-                    tableStyle="min-width: 50rem" 
-                    showGridlines
-                    scrollable
-                    :scrollHeight="`${tableHeight}px`"
-                    :pt="{bodycell: {class: 'p-0'} }" :pt-options="{ mergeProps: true }">
+                <DataTable @cell-edit-complete="onCellEditComplete" edit-mode="cell" :value="tableData" size="small"
+                    tableStyle="min-width: 50rem" showGridlines scrollable :scrollHeight="`${tableHeight}px`" :pt="{
+                        table: { style: 'min-width: 50rem' },
+                        column: {
+                            bodycell: ({ state }) => ({
+                                class: [{ 'p-0': state['d_editing'] }]
+                            })
+                        }
+                    }">
                     <Column>
                         <template #body="rowLables">
                             <span>{{ rowLables.index }}</span>
                         </template>
                     </Column>
-                    <template v-for="(cols, i) in tableData?.[0]">
-                        <Column :header="`${i}`" :field="`${i}`" style="min-width: 10rem;">
-                        </Column>
-                    </template>
+
+                    <Column v-for="(cols, i) in tableData?.[0]" :header="`${i}`" :field="`${i + '.value'}`"
+                        style="min-width: 10rem;">
+                        <template #editor="{ data, field }">
+                            <InputText v-model="data[field.split('.')[0]].value" class="h-100"></InputText>
+                        </template>
+                    </Column>
                 </DataTable>
             </TabPanel>
         </TabPanels>
     </Tabs>
 </template>
 
-<style scoped></style>
+<style scoped>
+
+</style>

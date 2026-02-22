@@ -56,9 +56,11 @@ const { height } = useElementSize(tabContainerRef)
 </template>
 
 <style scoped>
+/*
 .p-tabs {
     display: flex;
 }
+    */
 
 #grid-view-container {
     min-height: 0 !important;

@@ -72,7 +72,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       for (let i = 0; i < 18; i++) {
         sheet[i] = {}
         for (let j = 0; j < 12; j++) {
-          sheet[i][`${j}`] = 'S: ' + newSheetIdx + ' R: ' + i + ' C: ' + j
+          sheet[i][`${j}`] = {value: 'S: ' + newSheetIdx + ' R: ' + i + ' C: ' + j,  row:i}
         }
       }
 
