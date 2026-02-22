@@ -50,6 +50,8 @@ import ToolbarWrapper from './components/gridview/ToolbarWrapper.vue';
 //   console.log(windowHeight);
 //   spreadsheetStore.addEmptySheet();
 // });
+const isTableResized = ref(false);
+
 
 </script>
 
@@ -57,14 +59,14 @@ import ToolbarWrapper from './components/gridview/ToolbarWrapper.vue';
 
   <header ref="headerRef" class="text-center bg-dark text-light lead" style="height: 2rem;">CELL MASTER</header>
   <div class="pane-wrapper">
-    <splitpanes horizontal class="default-theme main-layout">
-      <pane size="70">
-        <GridContainer></GridContainer>
+    <splitpanes horizontal class="default-theme main-layout" @resized="() => isTableResized = true">
+      <pane size="70" max-size="100" min-size="0">
+        <GridContainer ></GridContainer>
       </pane>
       <pane size="30">
         <div style="overflow: auto;" class="container-fluid h-100">
           <div class="row">
-            <div class="col-12">
+            <div class="col-12 px-0">
               <ToolbarWrapper></ToolbarWrapper>
             </div>
           </div>

@@ -69,10 +69,10 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       //const updatedSheets = [...this.cellTables];
       const newSheetIdx = this.cellTables.length
       const sheet = []
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 18; i++) {
         sheet[i] = {}
-        for (let j = 0; j < 26; j++) {
-          sheet[i][`${j}`] = 'Sheet: ' + newSheetIdx + ' Row: ' + i + ' Col: ' + j
+        for (let j = 0; j < 12; j++) {
+          sheet[i][`${j}`] = 'S: ' + newSheetIdx + ' R: ' + i + ' C: ' + j
         }
       }
 

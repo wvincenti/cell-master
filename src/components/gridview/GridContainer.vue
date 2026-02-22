@@ -1,16 +1,14 @@
 <script setup>
-import { onMounted, ref, computed, onBeforeUpdate, onBeforeMount, onUpdated } from 'vue';
+import { onMounted, ref, computed, onBeforeUpdate, onBeforeMount } from 'vue';
 import { useSpreadsheetStore } from '@/stores/spreadsheet';
 
-import ToolbarWrapper from './ToolbarWrapper.vue';
 import TabWrapper from './TabWrapper.vue';
+import { useElementSize } from '@vueuse/core';
 
 
 const props = {
-    containerHeight: { type: Number }
+    containerHeight: { type: Number, isTableResize: Boolean }
 }
-
-
 
 console.log('GRID HEIGHT: ' + props.containerHeight);
 
@@ -18,31 +16,6 @@ console.log('GRID HEIGHT: ' + props.containerHeight);
 const spreadsheetStore = useSpreadsheetStore();
 
 const viewportRef = ref(null);
-
-// const addView = async () => {
-
-//     spreadsheetStore.views.push([]);
-//     console.log(spreadsheetStore.views);
-
-//     const newViewIdx = spreadsheetStore.views.length - 1;
-
-//     let newSheetId = spreadsheetStore.latestSheetId || await spreadsheetStore.latestSheetId;
-//     newSheetId++;
-
-//     spreadsheetStore.latestSheetId = newSheetId;
-
-//     let sheetIdx = spreadsheetStore.addSheetToView(newSheetId, newViewIdx);
-
-//     //const latestViewIdx = spreadsheetStore.views.length;
-
-//     const range = spreadsheetStore.addRangeToViewSheet(newViewIdx, sheetIdx);
-
-//     console.log(range);
-
-//     spreadsheetStore.viewRows.push(0);
-//     spreadsheetStore.setActiveSheetId(newSheetId);
-//     spreadsheetStore.setActiveView(newViewIdx);
-// }
 
 
 const updateWidth = () => {
@@ -65,38 +38,18 @@ const activeTab = computed(() => spreadsheetStore.activeTab);
 const sheetCount = computed(() => spreadsheetStore.tableCount);
 const tableData = computed(() => spreadsheetStore.cellTables[activeTab.value]);
 
-const height = ref(null);
+const tabContainerRef = ref(null);
 
-function setHeight() {
-    const tabList = document.querySelector(".p-tablist");
-    const tabContainer = document.querySelector(".mytab-container");
-    console.log(tabList);
-    console.log(tabContainer.offsetHeight)
-
-    setTimeout(() => {
-        height.value = tabContainer.offsetHeight - tabList.offsetHeight;
-    }, 150);
-
-    
-
-    console.log(height.value);
-    
-
-    
-
-}
-
-onMounted(() => {
-    setHeight();
-})
+const { height } = useElementSize(tabContainerRef)
 
 </script>
 
 <template>
-    <div ref="viewportRef" id="grid-view-container" class="container-fluid h-100">
-        <div ref="containerRow" class="row h-100">
-            <div class="col px-0 mytab-container">
-                <TabWrapper :pt="{class: 'p-0'}" :tableHeight="height" :activeTab="activeTab" :sheetCount="sheetCount" :tableData="tableData" @tab-select="(idx) => spreadsheetStore.setActiveTab(idx)" ></TabWrapper>
+    <div ref="tabContainerRef" id="grid-view-container" class="container-fluid h-100">
+        <div class="row h-100">
+            <div  class="col px-0 mytab-container bg-black" style="min-height: 0 !important; overflow: hidden !important;">
+                <TabWrapper :contHeight="height" :activeTab="activeTab" :sheetCount="sheetCount"
+                    :tableData="tableData" @tab-select="(idx) => spreadsheetStore.setActiveTab(idx)"></TabWrapper>
             </div>
         </div>
     </div>
@@ -105,6 +58,11 @@ onMounted(() => {
 <style scoped>
 .p-tabs {
     display: flex;
+}
+
+#grid-view-container {
+    min-height: 0 !important;
+
 }
 
 
