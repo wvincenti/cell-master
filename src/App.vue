@@ -10,6 +10,7 @@ import GridContainer from './components/gridview/GridContainer.vue';
 import CellTablesContainer from './components/celltables/CellTablesContainer.vue';
 import ViewContainer from './components/tableviews/ViewContainer.vue';
 import ToolbarWrapper from './components/gridview/ToolbarWrapper.vue';
+import { Menubar } from 'primevue';
 // export default {
 //     data(){
 //       return useSpreadsheetStore()
@@ -52,15 +53,27 @@ import ToolbarWrapper from './components/gridview/ToolbarWrapper.vue';
 // });
 const isTableResized = ref(false);
 
+const menu = ref([
+  {
+    label: 'CM',
+  },
+  {
+    label: 'Home',
+    icon: 'pi pi-home'
+  }
+])
+
 
 </script>
 
 <template>
 
-  <header ref="headerRef" class="text-center bg-dark text-light lead" style="height: 2rem;">CELL MASTER</header>
+
+ 
   <div class="pane-wrapper">
     <splitpanes horizontal class="default-theme main-layout" @resized="() => isTableResized = true">
       <pane size="70" max-size="100" min-size="0">
+        <Menubar :model="menu" :pt="{ root: { class: 'rounded-0 border-0'}}"></Menubar>
         <GridContainer ></GridContainer>
       </pane>
       <pane size="30">
@@ -122,4 +135,6 @@ const isTableResized = ref(false);
 footer {
   height: 2% !important;
 } */
+
+   /* <header ref="headerRef" class="text-center bg-dark text-light lead" style="height: 2rem;">CELL MASTER</header> */
 </style>

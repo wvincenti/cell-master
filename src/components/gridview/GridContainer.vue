@@ -5,34 +5,14 @@ import { useSpreadsheetStore } from '@/stores/spreadsheet';
 import TabWrapper from './TabWrapper.vue';
 import { useElementSize } from '@vueuse/core';
 
-
 const props = {
     containerHeight: { type: Number, isTableResize: Boolean }
 }
 
-console.log('GRID HEIGHT: ' + props.containerHeight);
-
-//const activeTab = ref(blankSheetId);
 const spreadsheetStore = useSpreadsheetStore();
 
-const viewportRef = ref(null);
 
-
-const updateWidth = () => {
-    if (viewportRef.value) {
-        console.log(viewportRef.value.offsetWidth)
-        containerWidth.value = viewportRef.value.offsetWidth;
-    }
-};
-
-
-onBeforeMount(() => {
-    spreadsheetStore.addEmptySheet();
-})
-
-onBeforeUpdate(() => {
-    console.log('UPDATING GRID CONTAINER')
-})
+console.log('GRID HEIGHT: ' + props.containerHeight);
 
 const activeTab = computed(() => spreadsheetStore.activeTab);
 const sheetCount = computed(() => spreadsheetStore.tableCount);
@@ -40,7 +20,24 @@ const tableData = computed(() => spreadsheetStore.cellTables[activeTab.value]);
 
 const tabContainerRef = ref(null);
 
-const { height } = useElementSize(tabContainerRef)
+const { height } = useElementSize(tabContainerRef);
+
+onBeforeMount(() => {
+    spreadsheetStore.addEmptySheet();
+});
+
+onBeforeUpdate(() => {
+    console.log('UPDATING GRID CONTAINER')
+});
+
+
+function onCellEdited(newValue, row, col) {
+    console.log(newValue);
+    console.log(row);
+    console.log(col);
+    spreadsheetStore.updateCell(newValue, row, col);
+
+}
 
 </script>
 
@@ -48,7 +45,7 @@ const { height } = useElementSize(tabContainerRef)
     <div ref="tabContainerRef" id="grid-view-container" class="container-fluid h-100">
         <div class="row h-100">
             <div  class="col px-0 mytab-container bg-black" style="min-height: 0 !important; overflow: hidden !important;">
-                <TabWrapper :contHeight="height" :activeTab="activeTab" :sheetCount="sheetCount"
+                <TabWrapper @cell-edited="onCellEdited" :contHeight="height" :activeTab="activeTab" :sheetCount="sheetCount"
                     :tableData="tableData" @tab-select="(idx) => spreadsheetStore.setActiveTab(idx)"></TabWrapper>
             </div>
         </div>

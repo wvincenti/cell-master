@@ -66,29 +66,29 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
   actions: {
     addEmptySheet() {
       console.time('DataCreation')
-      //const updatedSheets = [...this.cellTables];
+
       const newSheetIdx = this.cellTables.length
       const sheet = []
       for (let i = 0; i < 18; i++) {
         sheet[i] = {}
         for (let j = 0; j < 12; j++) {
-          sheet[i][`${j}`] = {value: 'S: ' + newSheetIdx + ' R: ' + i + ' C: ' + j,  row:i}
+          sheet[i][`${j}`] = {value:'',  row:i}
         }
       }
-
       console.timeEnd('DataCreation')
-
       console.time('StoreUpdate')
-      //this.cellTables.push(sheet);
       console.timeEnd('StoreUpdate')
 
-      //updatedSheets.push(sheet);
       this.cellTables.push(sheet);
       this.tableCount++;
 
       this.activeTab = newSheetIdx;
 
       console.log(this.cellTables)
+    },
+
+    updateCell(newValue, row, col){
+      this.cellTables[this.activeTab][row][col].value = newValue;
     },
 
     async fetchSheetSchema() {

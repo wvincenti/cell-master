@@ -9,19 +9,18 @@ const props = defineProps({
     sheetCount: Number,
     tableData: Array,
     contHeight: Number,
-})
+});
 
-const mainStore = useSpreadsheetStore();
+const emit = defineEmits(['cell-edited']);
 
 const tabListRef = ref(null);
-
 const tableHeight = computed(() => props.contHeight - tabListRef.value?.offsetHeight);
 
-
-
 const rowLables = computed(() => props.tableData.map((row, i) => {
-    return { index: i };
+    return { index: i, label: getColLabel(i+1)};
 }))
+
+const oldInputValue = ref(null);
 
 onUpdated(() => {
     console.log('updating TabWrapper... active tab is: ' + props.activeTab);
@@ -52,17 +51,32 @@ function getColLabel(n) {
 }
 
 function onCellEditComplete(e) {
+    console.log(e)
+    let { data, field } = e;
 
-    let { data, newValue, field } = e;
-    console.log(newValue);
+    const [col, inputValue] = field.split('.');
+    console.log(inputValue)
+
+    emit('cell-edited', oldInputValue.value, data[col]['row'], col);
+
     console.log(data);
     console.log(field);
-    const [col, inputValue] = field.split('.');
-    const row = parseInt(data[col]['row']);
 
-    console.log(mainStore.cellTables[props.activeTab][row][col][inputValue]);
-    let oldValue =  mainStore.cellTables[props.activeTab][row][col][inputValue];
-    if (oldValue != newValue) oldValue = newValue;
+    oldInputValue.value = '';
+
+}
+
+function onCellInit(e){
+    let {data, field} = e;
+
+    let [col, value] = field.split('.');
+
+
+    console.log(data);
+    console.log(field);
+    console.log(data[col][value])
+
+    oldInputValue.value = data[col][value];
 }
 
 
@@ -79,7 +93,7 @@ function onCellEditComplete(e) {
         </TabList>
         <TabPanels :pt="{ root: { class: 'p-0' } }">
             <TabPanel :value="activeTab">
-                <DataTable @cell-edit-complete="onCellEditComplete" edit-mode="cell" :value="tableData" size="small"
+                <DataTable @cell-edit-init="onCellInit" @cell-edit-complete="onCellEditComplete" edit-mode="cell" :value="tableData" size="small"
                     tableStyle="min-width: 50rem" showGridlines scrollable :scrollHeight="`${tableHeight}px`" :pt="{
                         table: { style: 'min-width: 50rem' },
                         column: {
@@ -97,7 +111,7 @@ function onCellEditComplete(e) {
                     <Column v-for="(cols, i) in tableData?.[0]" :header="`${i}`" :field="`${i + '.value'}`"
                         style="min-width: 10rem;">
                         <template #editor="{ data, field }">
-                            <InputText v-model="data[field.split('.')[0]].value" class="h-100"></InputText>
+                            <InputText v-model="oldInputValue" class="h-100 w-100 border-0 rounded-0"></InputText>
                         </template>
                     </Column>
                 </DataTable>
