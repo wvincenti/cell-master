@@ -10,7 +10,10 @@ import GridContainer from './components/gridview/GridContainer.vue';
 import CellTablesContainer from './components/celltables/CellTablesContainer.vue';
 import ViewContainer from './components/tableviews/ViewContainer.vue';
 import ToolbarWrapper from './components/gridview/ToolbarWrapper.vue';
+import TableNavigator from './components/gridview/TableNavigator.vue';
+import HeaderContainer from './components/header/HeaderContainer.vue';
 import { Menubar } from 'primevue';
+import DashboardContainer from './components/gridview/DashboardContainer.vue';
 // export default {
 //     data(){
 //       return useSpreadsheetStore()
@@ -53,45 +56,43 @@ import { Menubar } from 'primevue';
 // });
 const isTableResized = ref(false);
 
-const menu = ref([
-  {
-    label: 'CM',
-  },
-  {
-    label: 'Home',
-    icon: 'pi pi-home'
-  }
-])
-
-
 </script>
 
 <template>
 
 
- 
+
   <div class="pane-wrapper">
-    <splitpanes horizontal class="default-theme main-layout" @resized="() => isTableResized = true">
-      <pane size="70" max-size="100" min-size="0">
-        <Menubar :model="menu" :pt="{ root: { class: 'rounded-0 border-0'}}"></Menubar>
-        <GridContainer ></GridContainer>
+    <HeaderContainer></HeaderContainer>
+    <splitpanes class="main-layout default-theme">
+      <pane size="30" max-size="30" class="bg-black">
+        <DashboardContainer></DashboardContainer>
       </pane>
-      <pane size="30">
-        <div style="overflow: auto;" class="container-fluid h-100">
-          <div class="row">
-            <div class="col-12 px-0">
-              <ToolbarWrapper></ToolbarWrapper>
+      <pane>
+      <splitpanes horizontal class="default-theme main-layout" @resized="() => isTableResized = true">
+
+        <pane size="70" max-size="100" min-size="0">
+          
+          <GridContainer></GridContainer>
+        </pane>
+        <pane size="30">
+          <div style="overflow: auto;" class="container-fluid h-100">
+            <div class="row">
+              <div class="col-12 px-0">
+                <ToolbarWrapper></ToolbarWrapper>
+              </div>
             </div>
+            <!-- <div class="row px-0">
+              <div ref="paneRef" class="col-6">
+                <CellTablesContainer></CellTablesContainer>
+              </div>
+              <div class="col-6">
+                <ViewContainer></ViewContainer>
+              </div>
+            </div> -->
           </div>
-          <div class="row px-0">
-            <div ref="paneRef" class="col-6">
-              <CellTablesContainer></CellTablesContainer>
-            </div> 
-            <div class="col-6">
-              <ViewContainer></ViewContainer>
-            </div>
-          </div>
-        </div>
+        </pane>
+      </splitpanes>
       </pane>
     </splitpanes>
   </div>
@@ -136,5 +137,5 @@ footer {
   height: 2% !important;
 } */
 
-   /* <header ref="headerRef" class="text-center bg-dark text-light lead" style="height: 2rem;">CELL MASTER</header> */
+/* <header ref="headerRef" class="text-center bg-dark text-light lead" style="height: 2rem;">CELL MASTER</header> */
 </style>

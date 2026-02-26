@@ -1,7 +1,6 @@
 <script setup>
 import { onMounted, ref, computed, onBeforeUpdate, onBeforeMount } from 'vue';
 import { useSpreadsheetStore } from '@/stores/spreadsheet';
-
 import TabWrapper from './TabWrapper.vue';
 import { useElementSize } from '@vueuse/core';
 
@@ -15,10 +14,13 @@ const spreadsheetStore = useSpreadsheetStore();
 console.log('GRID HEIGHT: ' + props.containerHeight);
 
 const activeTab = computed(() => spreadsheetStore.activeTab);
-const sheetCount = computed(() => spreadsheetStore.tableCount);
+const sheetCount = computed(() => spreadsheetStore.cellTables.length);
 const tableData = computed(() => spreadsheetStore.cellTables[activeTab.value]);
 
+
 const tabContainerRef = ref(null);
+
+
 
 const { height } = useElementSize(tabContainerRef);
 

@@ -24,7 +24,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
   state: () => ({
     columns: {}, // {sheetId: [col1, col2, ...], ...}
     dirtyCells: {},
-    sheets: {},
+    sheets: [],
 
     cellTables: [],
 
@@ -72,39 +72,41 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       for (let i = 0; i < 18; i++) {
         sheet[i] = {}
         for (let j = 0; j < 12; j++) {
-          sheet[i][`${j}`] = {value:'',  row:i}
+          sheet[i][`${j}`] = { value: '', row: i }
         }
       }
       console.timeEnd('DataCreation')
       console.time('StoreUpdate')
       console.timeEnd('StoreUpdate')
 
-      this.cellTables.push(sheet);
-      this.tableCount++;
+      this.cellTables.push(sheet)
+      this.tableCount++
 
-      this.activeTab = newSheetIdx;
+      this.activeTab = newSheetIdx
 
       console.log(this.cellTables)
     },
 
-    updateCell(newValue, row, col){
-      this.cellTables[this.activeTab][row][col].value = newValue;
+    updateCell(newValue, row, col) {
+      this.cellTables[this.activeTab][row][col].value = newValue
     },
 
     async fetchSheetSchema() {
       this.loading = true
       const response = await axios.get(`${urlbase}/api/db`)
       const sheets = response.data
+      console.log(sheets)
       for (const [key, sheet] of Object.entries(sheets)) {
-        this.sheets[key] = sheet
+        this.sheets.push(sheet)
       }
       this.loading = false
     },
 
     setActiveTab(tabIdx) {
-		this.activeTab = tabIdx;
-    this.activeTable = this.cellTables[tabIdx];
-	},
+      console.log('setting active tab :' + tabIdx)
+      this.activeTab = tabIdx
+      this.activeTable = this.cellTables[tabIdx]
+    },
 
     setActiveView(viewIdx) {
       this.activeView = viewIdx
@@ -136,7 +138,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       // response.data.forEach((cell) => {
       //   console.log('printing cell')
       //   console.log(cell)
-      //   const ids = cell.id.split('-')
+      //   const ids = cell.id.split('-'
       //   const key = sheetId + '-' + ids[1] + '-' + ids[2]
       //   this.cells[key] = {
       //     value: cell.value,

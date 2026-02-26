@@ -16,11 +16,9 @@ console.log(props.inputName);
 
 <template>
     <div v-if="inputNameClicked == inputKey" class="input-group mb-3">
-
         <button type="button" class="btn btn-sm btn-outline-success">
             <i class="bi bi-check2"></i>
         </button>
-
         <input class="form-control form-control-sm" type="text" @click.stop="" :value="inputName">
         <button type="button" class="btn btn-sm btn-outline-danger" @click.stop="inputNameClicked = null"
             aria-label="Close">

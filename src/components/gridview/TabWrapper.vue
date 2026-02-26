@@ -85,7 +85,7 @@ function onCellInit(e){
 
 <template>
     <Tabs :value="activeTab" scrollable>
-        <TabList :pt="{ root: { onVnodeMounted: (vnode) => onRootMounted(vnode.el) } }">
+        <TabList v-memo="[sheetCount]" :pt="{ root: { onVnodeMounted: (vnode) => onRootMounted(vnode.el) } }">
             <Tab :pt="{ root: { class: 'py-2' } }" v-for="(cTable, idx) in sheetCount" :key="'tab-btn-' + idx"
                 :value="idx" @click="$emit('tabSelect', idx)">
                 {{ 'View ' + idx }}
