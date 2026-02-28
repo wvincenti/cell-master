@@ -22,7 +22,8 @@ const tabContainerRef = ref(null);
 
 const { height } = useElementSize(tabContainerRef);
 
-onBeforeMount(() => {
+onBeforeMount( async () => {
+    await spreadsheetStore.fetchLatestSheetId();
     spreadsheetStore.addEmptySheet();
 });
 
@@ -31,17 +32,15 @@ onBeforeUpdate(() => {
 });
 
 
-function onCellEdited(newValue, row, col) {
-    spreadsheetStore.updateCell(newValue, row, col);
+function onCellEdited(newValue, row, col, activeTab) {
+    spreadsheetStore.updateCell(newValue, row, col, activeTab);
 }
 
 function onTabSelect(idx){
     spreadsheetStore.setActiveTab(idx)
 }
 
-async function handleSaveActiveSheet() {
-    spreadsheetStore.flushSheet();
-}
+
 
 
 
@@ -51,8 +50,7 @@ async function handleSaveActiveSheet() {
     <div ref="tabContainerRef" id="grid-view-container" class="container-fluid h-100">
         <div class="row h-100">
             <div  class="col px-0 mytab-container bg-black" style="min-height: 0 !important; overflow: hidden !important;">
-                <TabWrapper 
-                    @saveActiveSheet="handleSaveActiveSheet" 
+                <TabWrapper
                     @cell-edited="onCellEdited"
                     @tabSelect="onTabSelect"
                     :contHeight="height" 

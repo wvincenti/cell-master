@@ -24,6 +24,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
   state: () => ({
     columns: {}, // {sheetId: [col1, col2, ...], ...}
     dirtyCells: {},
+
     sheets: [],
 
     cellTables: [],
@@ -40,41 +41,27 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
     loading: false,
   }),
 
-  getters: {
-    getCell: (state) => (s, r, c) => {
-      const key = s + '-' + r + '-' + c
-      return state.cells[key] || { value: '', originalValue: '', isDirty: false, id: key }
-    },
-    getView: (state) => (idx) => {
-      const view = []
-      state.views[idx]?.forEach((sheet) => {
-        view.push(sheet)
-
-        // const cols = sheet.cols;
-        // const view = [];
-        // cols.forEach((cell) => {
-        //   view.push(state.cells[cell.id]);
-        // })
-      })
-      return view
-    },
-    getTable: (state) => (idx) => {
-      return state.cellTables[idx]
-    },
-  },
+  getters: {},
 
   actions: {
+    flagDirtyCell(tab, row, col) {
+      this.cellTables[tab][row][col].isDirty = true
+    },
+
     addEmptySheet() {
       console.time('DataCreation')
 
-      const newSheetIdx = this.cellTables.length
+      const newSheetIdx = this.cellTables.length;
       const sheet = []
       for (let i = 0; i < 12; i++) {
         sheet[i] = {}
         for (let j = 0; j < 11; j++) {
-          sheet[i][`${j}`] = { value: '', row: i, col: j }
+          sheet[i][`${j}`] = { value: '', row: i, col: j, isDirty: false, sheet_id: this.latestSheetId }
         }
       }
+
+      this.latestSheetId++;
+
       console.timeEnd('DataCreation')
       console.time('StoreUpdate')
       console.timeEnd('StoreUpdate')
@@ -85,11 +72,16 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       this.activeTab = newSheetIdx
 
       console.log(this.cellTables)
-      return newSheetIdx;
+      return newSheetIdx
     },
 
-    updateCell(newValue, row, col) {
-      this.cellTables[this.activeTab][row][col].value = newValue
+    updateCell(newValue, row, col, tab) {
+      const cell = this.cellTables[tab][row][col];
+      cell.value = newValue;
+      if (!this.dirtyCell?.[cell.sheet_id]) this.dirtyCells[cell.sheet_id] = [];
+      this.dirtyCells[cell.sheet_id].push(cell);
+      cell.isDirty = true
+      return cell;
     },
 
     async fetchSheetSchema() {
@@ -131,26 +123,8 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
     async fetchCells(sheetId) {
       this.loading = true
       const response = await axios.get(`${urlbase}/api/cells/${sheetId}`)
-
-      return response.data;
-
-      // response.data.forEach((cell) => {
-      //   console.log('printing cell')
-      //   console.log(cell)
-      //   const ids = cell.id.split('-'
-      //   const key = sheetId + '-' + ids[1] + '-' + ids[2]
-      //   this.cells[key] = {
-      //     value: cell.value,
-      //     originalValue: cell.value, // Sync the "truth"
-      //     isDirty: false,
-      //     id: key,
-      //     col_id: key[2]
-      //   }
-      // })
-
-      //console.log(sheetId)
-
       this.loading = false
+      return response.data
     },
 
     async flushSheet(sheetId = this.activeSheetId, vIdx = this.activeView) {
@@ -181,27 +155,28 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       }
     },
 
-    async saveCells() {
+    async saveCells(dirtyCells) {
       this.loading = true
-      const dirtyCells = []
-      for (const key of Object.keys(this.cells)) {
-        const cell = this.cells[key]
-        if (cell.isDirty) {
-          const [row, col] = key.split('-')
-          dirtyCells.push({
-            sheet_id: this.activeSheetId,
-            row_index: row,
-            col_index: col,
-            content: cell.value,
-          })
-        }
-      }
+      // const dirtyCells = []
+      // for (const key of Object.keys(this.cells)) {
+      //   const cell = this.cells[key]
+      //   if (cell.isDirty) {
+      //     const [row, col] = key.split('-')
+      //     dirtyCells.push({
+      //       sheet_id: this.activeSheetId,
+      //       row_index: row,
+      //       col_index: col,
+      //       content: cell.value,
+      //     })
+      //   }
+      // }
 
       console.log('send save request')
 
       if (dirtyCells.length > 0) {
         await axios.post(`${urlbase}/api/cells/saveCells`, { cells: dirtyCells })
       }
+      this.loading = false
     },
 
     async updateName(name, tableName, id) {
