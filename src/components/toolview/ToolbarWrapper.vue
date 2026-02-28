@@ -1,7 +1,9 @@
 <script setup>
 import { Toolbar, Button, IconField, InputIcon, InputText } from 'primevue';
 import { useSpreadsheetStore } from '@/stores/spreadsheet';
-import { onUpdated } from 'vue';
+import { onUpdated} from 'vue';
+
+defineEmits(['addEmptySheet', 'saveActiveSheet'])
 
 const spreadsheetStore = useSpreadsheetStore();
 
@@ -14,7 +16,7 @@ onUpdated(() => {
     <Toolbar :pt="{root: {class: 'py-1'}}">
         <template #start>
             <Button @click="spreadsheetStore.addEmptySheet" icon="pi pi-plus" class="mr-2 " severity="secondary" text />
-            <Button icon="pi pi-print" class="mr-2" severity="secondary" text />
+            <Button @click="$emit('saveActiveSheet')" icon="pi pi-save" class="mr-2 " severity="secondary" text />
             <Button icon="pi pi-upload" class="" severity="secondary" text />
         </template>
 

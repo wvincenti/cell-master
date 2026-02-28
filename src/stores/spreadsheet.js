@@ -69,10 +69,10 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
       const newSheetIdx = this.cellTables.length
       const sheet = []
-      for (let i = 0; i < 18; i++) {
+      for (let i = 0; i < 12; i++) {
         sheet[i] = {}
-        for (let j = 0; j < 12; j++) {
-          sheet[i][`${j}`] = { value: '', row: i }
+        for (let j = 0; j < 11; j++) {
+          sheet[i][`${j}`] = { value: '', row: i, col: j }
         }
       }
       console.timeEnd('DataCreation')
@@ -85,6 +85,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       this.activeTab = newSheetIdx
 
       console.log(this.cellTables)
+      return newSheetIdx;
     },
 
     updateCell(newValue, row, col) {
@@ -131,9 +132,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       this.loading = true
       const response = await axios.get(`${urlbase}/api/cells/${sheetId}`)
 
-      this.cellTables.push(response.data)
-
-      console.log(response)
+      return response.data;
 
       // response.data.forEach((cell) => {
       //   console.log('printing cell')

@@ -20,8 +20,6 @@ const tableData = computed(() => spreadsheetStore.cellTables[activeTab.value]);
 
 const tabContainerRef = ref(null);
 
-
-
 const { height } = useElementSize(tabContainerRef);
 
 onBeforeMount(() => {
@@ -34,12 +32,18 @@ onBeforeUpdate(() => {
 
 
 function onCellEdited(newValue, row, col) {
-    console.log(newValue);
-    console.log(row);
-    console.log(col);
     spreadsheetStore.updateCell(newValue, row, col);
-
 }
+
+function onTabSelect(idx){
+    spreadsheetStore.setActiveTab(idx)
+}
+
+async function handleSaveActiveSheet() {
+    spreadsheetStore.flushSheet();
+}
+
+
 
 </script>
 
@@ -47,8 +51,15 @@ function onCellEdited(newValue, row, col) {
     <div ref="tabContainerRef" id="grid-view-container" class="container-fluid h-100">
         <div class="row h-100">
             <div  class="col px-0 mytab-container bg-black" style="min-height: 0 !important; overflow: hidden !important;">
-                <TabWrapper @cell-edited="onCellEdited" :contHeight="height" :activeTab="activeTab" :sheetCount="sheetCount"
-                    :tableData="tableData" @tab-select="(idx) => spreadsheetStore.setActiveTab(idx)"></TabWrapper>
+                <TabWrapper 
+                    @saveActiveSheet="handleSaveActiveSheet" 
+                    @cell-edited="onCellEdited"
+                    @tabSelect="onTabSelect"
+                    :contHeight="height" 
+                    :activeTab="activeTab" 
+                    :sheetCount="sheetCount"
+                    :tableData="tableData">
+                </TabWrapper>
             </div>
         </div>
     </div>
