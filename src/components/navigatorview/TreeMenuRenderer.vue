@@ -1,10 +1,11 @@
 <script setup>
 import { inject } from 'vue';
-import { Inplace, Button, InputText } from 'primevue';
+import { Inplace, Button, ButtonGroup, InputText } from 'primevue';
 const props = defineProps(['item', 'depth', 'expanded',])
 const emit = defineEmits(['setExpanded', 'add-sheet'])
 
 const addSheetHandler = inject('addSheet');
+const deleteSheetHandler = inject('deleteSheet');
 
 function setExpanded(isExpanded, sheetId) {
     console.log(isExpanded);
@@ -13,9 +14,12 @@ function setExpanded(isExpanded, sheetId) {
     console.log(isExpanded);
 }
 
-const addSheet = async (sheetId) => {
-    emit('add-sheet');
+async function addSheet(sheetId) {
     await addSheetHandler(sheetId);
+}
+
+async function deleteSheet(sheetId) {
+    await deleteSheetHandler(sheetId);
 }
 
 
@@ -40,11 +44,15 @@ const addSheet = async (sheetId) => {
                         <InputText v-model="item.name" autofocus />
                         <Button icon="pi pi-times" text severity="danger" @click="closeCallback" />
                     </span>
-                </template> 
+                </template>
             </Inplace>
         </div>
-        <div class="col-1 me-2">
-            <Button v-if="item.showAdd" icon="pi pi-plus" class="" @click="() => addSheet(item.id)" />
+        <div class="col-auto pe-0 text-end">
+            <ButtonGroup v-if="item.showAdd">
+                <Button icon="pi pi-plus" text class="" @click="() => addSheet(item.id)" size="small" />
+                <Button icon="pi pi-trash" text severity="danger" @click="() => deleteSheet(item.id)"></Button>
+            </ButtonGroup>
+
         </div>
 
     </div>

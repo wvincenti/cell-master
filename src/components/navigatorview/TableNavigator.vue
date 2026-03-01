@@ -31,8 +31,6 @@ const clickedInput = ref(null);
 
     <PanelMenu :model="navigator">
         <template #item="{ item, props }">
-
-
             <div class="d-flex align-items-center align-items-between justify-content-between p-menuitem-link">
                 <div class="card">
                     <Inplace>

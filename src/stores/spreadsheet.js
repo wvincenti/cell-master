@@ -48,6 +48,11 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       this.cellTables[tab][row][col].isDirty = true
     },
 
+    async deleteSheet(sheetId){
+      console.log('SENDING DELETE REQUEST');
+      return await axios.post(`${urlbase}/api/deleteSheet`, {sheet_id: sheetId});
+    },
+
     addEmptySheet() {
       console.time('DataCreation')
 
@@ -78,9 +83,15 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
     updateCell(newValue, row, col, tab) {
       const cell = this.cellTables[tab][row][col];
       cell.value = newValue;
-      if (!this.dirtyCell?.[cell.sheet_id]) this.dirtyCells[cell.sheet_id] = [];
+      console.log(this.dirtyCells[cell.sheet_id]);
+      if (this.dirtyCells?.[cell.sheet_id] == null) this.dirtyCells[cell.sheet_id] = [];
+      
+      cell.isDirty = true;
+      
       this.dirtyCells[cell.sheet_id].push(cell);
-      cell.isDirty = true
+
+      console.log(this.dirtyCells[cell.sheet_id]);
+      
       return cell;
     },
 
@@ -89,6 +100,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       const response = await axios.get(`${urlbase}/api/db`)
       const sheets = response.data
       console.log(sheets)
+      this.sheets = [];
       for (const [key, sheet] of Object.entries(sheets)) {
         this.sheets.push(sheet)
       }
