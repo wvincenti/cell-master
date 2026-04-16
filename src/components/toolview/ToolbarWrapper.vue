@@ -19,7 +19,6 @@ onUpdated(() => {
             <Button @click="$emit('saveActiveSheet')" icon="pi pi-save" class="mr-2 " severity="secondary" text />
             <Button icon="pi pi-upload" class="" severity="secondary" text />
         </template>
-
         <template #center>
             <IconField>
                 <InputIcon>
@@ -28,9 +27,7 @@ onUpdated(() => {
                 <InputText size="small" placeholder="Search" />
             </IconField>
         </template>
-
         <template #end>
-           
         </template>
     </Toolbar>
 </template>

@@ -10,7 +10,6 @@ const props = {
 
 const spreadsheetStore = useSpreadsheetStore();
 
-
 console.log('GRID HEIGHT: ' + props.containerHeight);
 
 const activeTab = computed(() => spreadsheetStore.activeTab);
@@ -28,21 +27,16 @@ onBeforeMount( async () => {
 });
 
 onBeforeUpdate(() => {
-    console.log('UPDATING GRID CONTAINER')
+    console.log('UPDATING GRID CONTAINER');
 });
-
 
 function onCellEdited(newValue, row, col, activeTab) {
     spreadsheetStore.updateCell(newValue, row, col, activeTab);
 }
 
 function onTabSelect(idx){
-    spreadsheetStore.setActiveTab(idx)
+    spreadsheetStore.setActiveTab(idx);
 }
-
-
-
-
 
 </script>
 

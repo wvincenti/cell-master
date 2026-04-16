@@ -4,6 +4,10 @@ import TableNavigator from './TableNavigator.vue';
 import { onMounted, computed, ref, watch, provide } from 'vue';
 import TreeMenuRenderer from './TreeMenuRenderer.vue';
 import VueTreeDnd from 'vue-tree-dnd'
+import TreeMenuWrapper from './TreeMenuWrapper.vue';
+import SheetMenuWrapper from './SheetMenuWrapper.vue';
+import router from '@/router';
+
 
 const spreadsheetStore = useSpreadsheetStore()
 
@@ -13,8 +17,22 @@ const tabIndex = computed(() => spreadsheetStore.cellTables.length);
 
 const navigator = ref([]);
 
+const sheetMenu = computed(() => [
+    {
+        label: 'Sheets',
+        icon: 'pi pi-table',
+        items: spreadsheetStore.sheets.map((sheet) => {
+            return {
+                label: sheet.name,
+                icon: 'pi pi-plus'
+            }
+        })
+    }
+])
+
 provide('addSheet', addSheet);
-provide('deleteSheet', deleteSheet)
+provide('deleteSheet', deleteSheet);
+provide('updateName', spreadsheetStore.updateName);
 
 // Watch the store for changes and update the local navigator ref
 watch(() => spreadsheetStore.sheets, (newSheets) => {
@@ -39,11 +57,18 @@ watch(() => spreadsheetStore.sheets, (newSheets) => {
     });
 }, { immediate: true, deep: true });
 
+
+const newNavigator = spreadsheetStore.sheets.map((sheet) => {
+    return {
+        id: sheet.id,
+        name: sheet.name,
+        cols: sheet.cols.map((col) => { col.id, col.name })
+    }
+})
+
 // Now, when you update expandedKeys, the navigator will still be reactive 
 // because it's a ref being watched or updated.
 function handleSetExpanded(id, isExpanded) {
-    // expandedKeys.value[depth][id] = isExpanded;
-
     // Manually sync the local ref so the UI reflects the change
     const node = navigator.value.find(n => n.id === id);
 
@@ -52,11 +77,12 @@ function handleSetExpanded(id, isExpanded) {
 
 onMounted(async () => {
     try {
-
         await spreadsheetStore.fetchSheetSchema();
         console.log(spreadsheetStore.sheets);
-    } catch (error) {
-        console.error(error)
+    } catch (e) {
+        console.log(e.code)
+        if (e.status === 401) return router.push('/login');
+        console.error(e)
     }
 })
 
@@ -85,18 +111,17 @@ async function addSheet(id) {
 
 async function deleteSheet(sheetId) {
     try {
-        const response = await spreadsheetStore.deleteSheet(sheetId);
+        const response = await spreadsheetStore.deleteSheetFromDB(sheetId);
         console.log(response);
         if (response.status == 200) {
             // make it a store action ****
-            spreadsheetStore.sheets = spreadsheetStore.sheets.filter(sheet => sheet.id != sheetId);
+            spreadsheetStore.removeSheetFromStore(sheetId);
         }
     } catch (err) {
         console.log(err);
     }
-
-
 }
+
 
 function moveHandler(movM) {
     console.log(movM);
@@ -112,12 +137,17 @@ function moveHandler(movM) {
         <div class="row">
             <div class="col p-1">
                 <VueTreeDnd @add-sheet="() => { console.log('event recieved') }" @move="moveHandler"
-                    @setExpanded="handleSetExpanded" :component="TreeMenuRenderer" v-model="navigator"></VueTreeDnd>
+                    @setExpanded="handleSetExpanded" @rename="(arg1, arg2, arg3) => console.log('renaming')"
+                    :component="TreeMenuRenderer" v-model="navigator">
+                </VueTreeDnd>
             </div>
         </div>
         <div class="row">
             <div class="col p-1">
+                <!-- <TreeMenuWrapper :sheets="newNavigator"></TreeMenuWrapper> -->
                 <!-- <TableNavigator @add-sheet="addSheet" :navigator="navigator"></TableNavigator> -->
+                <SheetMenuWrapper :menu="sheetMenu"></SheetMenuWrapper>
+
             </div>
         </div>
     </div>

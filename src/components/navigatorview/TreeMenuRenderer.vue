@@ -2,10 +2,11 @@
 import { inject } from 'vue';
 import { Inplace, Button, ButtonGroup, InputText } from 'primevue';
 const props = defineProps(['item', 'depth', 'expanded',])
-const emit = defineEmits(['setExpanded', 'add-sheet'])
+const emit = defineEmits(['setExpanded', 'add-sheet', 'rename'])
 
 const addSheetHandler = inject('addSheet');
 const deleteSheetHandler = inject('deleteSheet');
+const updateNameHandler = inject('updateName');
 
 function setExpanded(isExpanded, sheetId) {
     console.log(isExpanded);
@@ -22,7 +23,11 @@ async function deleteSheet(sheetId) {
     await deleteSheetHandler(sheetId);
 }
 
-
+function handleCloseInplace(newName, tableName, sheetId, colId, closeCallback){
+    closeCallback();
+    //emit('rename', tableName, id, newName);
+    updateNameHandler(newName, tableName, sheetId, colId);
+}
 
 </script>
 
@@ -42,7 +47,8 @@ async function deleteSheet(sheetId) {
                 <template #content="{ closeCallback }">
                     <span class="inline-flex items-center gap-2">
                         <InputText v-model="item.name" autofocus />
-                        <Button icon="pi pi-times" text severity="danger" @click="closeCallback" />
+                        <Button icon="pi pi-times" text severity="danger" 
+                            @click="() => handleCloseInplace(item.name, 'sheets', item.id, null, closeCallback)" />
                     </span>
                 </template>
             </Inplace>
@@ -50,11 +56,8 @@ async function deleteSheet(sheetId) {
         <div class="col-auto pe-0 text-end">
             <ButtonGroup v-if="item.showAdd">
                 <Button icon="pi pi-plus" text class="" @click="() => addSheet(item.id)" size="small" />
-                <Button icon="pi pi-trash" text severity="danger" @click="() => deleteSheet(item.id)"></Button>
+                <Button icon="pi pi-trash" text severity="danger" @click="() => deleteSheet(item.id)" size="small"></Button>
             </ButtonGroup>
-
         </div>
-
     </div>
-
 </template>

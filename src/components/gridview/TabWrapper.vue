@@ -70,7 +70,10 @@ function onCellInit(e){
                 <DataTable @cell-edit-init="onCellInit" @cell-edit-complete="onCellEditComplete" 
                     edit-mode="cell" 
                     :value="tableData" size="small"
-                    tableStyle="min-width: 50rem" showGridlines scrollable :scrollHeight="`${tableHeight}px`" 
+                    tableStyle="min-width: 50rem" 
+                    showGridlines 
+                    scrollable 
+                    :scrollHeight="`${tableHeight}px`" 
                     :pt="{
                         table: { style: 'min-width: 50rem' },
                         column: {
@@ -80,7 +83,7 @@ function onCellInit(e){
                         }
                     }"
                 >
-                    <Column>
+                    <Column frozen>
                         <template #body="rowLables">
                             <span>{{ rowLables.index }}</span>
                         </template>

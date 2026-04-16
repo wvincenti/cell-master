@@ -14,16 +14,17 @@ const isTableResized = ref(false);
 
 
 
-  <div class="pane-wrapper">
+  <div class="pane-wrapper bg-secondary">
     <HeaderContainer></HeaderContainer>
-    <splitpanes class="main-layout default-theme">
+
+    <splitpanes class="main-layout default-them bg-secondary">
       <pane size="30" max-size="30" class="bg-black">
         <DashboardContainer @add-sheet="() => { console.log('event recieved') }"></DashboardContainer>
       </pane>
       <pane>
-        <splitpanes horizontal class="default-theme main-layout" @resized="() => isTableResized = true">
-          <pane size="70" max-size="100" min-size="0">
-            <GridContainer></GridContainer>
+        <splitpanes horizontal class="default-theme main-layout " @resized="() => isTableResized = true">
+          <pane class="bg-secondary" size="70" max-size="100" min-size="0">
+            <RouterView class="bg-secondary"/>
           </pane>
           <pane size="30">
             <ToolsContainer></ToolsContainer>
@@ -31,6 +32,7 @@ const isTableResized = ref(false);
         </splitpanes>
       </pane>
     </splitpanes>
+
   </div>
   <footer ref="footerRef" class="text-center align-middle bg-dark text-light"
     style="font-size: xx-small; height: 1rem;">
