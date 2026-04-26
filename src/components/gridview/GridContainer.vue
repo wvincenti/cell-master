@@ -13,8 +13,12 @@ const spreadsheetStore = useSpreadsheetStore();
 console.log('GRID HEIGHT: ' + props.containerHeight);
 
 const activeTab = computed(() => spreadsheetStore.activeTab);
-const sheetCount = computed(() => spreadsheetStore.cellTables.length);
+const sheetNames = computed(() => spreadsheetStore.sheets.map((sheet) => sheet.name));
 const tableData = computed(() => spreadsheetStore.cellTables[activeTab.value]);
+
+console.log('TABLE DATA ***')
+console.log(tableData.value);
+console.log(sheetNames.value);
 
 
 const tabContainerRef = ref(null);
@@ -22,8 +26,10 @@ const tabContainerRef = ref(null);
 const { height } = useElementSize(tabContainerRef);
 
 onBeforeMount( async () => {
-    await spreadsheetStore.fetchLatestSheetId();
-    spreadsheetStore.addEmptySheet();
+    // await spreadsheetStore.fetchLatestSheetId();
+    console.log('**** sheets ***');
+    console.log(spreadsheetStore.sheets)
+    if (spreadsheetStore.sheets.length == 0) spreadsheetStore.addEmptySheet();
 });
 
 onBeforeUpdate(() => {
@@ -46,10 +52,10 @@ function onTabSelect(idx){
             <div  class="col px-0 mytab-container bg-black" style="min-height: 0 !important; overflow: hidden !important;">
                 <TabWrapper
                     @cell-edited="onCellEdited"
-                    @tabSelect="onTabSelect"
+                    @tab-select="onTabSelect"
                     :contHeight="height" 
                     :activeTab="activeTab" 
-                    :sheetCount="sheetCount"
+                    :sheetNames="sheetNames"
                     :tableData="tableData">
                 </TabWrapper>
             </div>

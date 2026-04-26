@@ -1,9 +1,10 @@
 <script setup>
 import { Form } from '@primevue/forms';
 import { InputText, Message, Button } from 'primevue';
-import { useSpreadsheetStore } from '@/stores/spreadsheet';
+import { useAuthStore } from '@/stores/userauth';
 
-const spreadsheetStore = useSpreadsheetStore();
+
+const userauth = useAuthStore();
 
 const onFormSubmit = async (state) => {
 
@@ -13,7 +14,7 @@ const onFormSubmit = async (state) => {
     if (valid) {
         // toast.add({ severity: 'success', summary: 'Form is submitted.', life: 3000 });
         console.log('valid: ')
-        const response = await spreadsheetStore.registerUser(values);
+        const response = await userauth.registerUser(values);
         console.log(response);
     }
 
@@ -22,10 +23,10 @@ const onFormSubmit = async (state) => {
 }
 </script>
 <template>
-    <div class="container-fluid my-auto bg-secondary">
+    <div class="container-fluid my-auto">
         <div class="row justify-content-center align-items-center">
-            <div class="col-5">
-                <Form v-slot="$form" :initialValues :resolver :validateOnValueUpdate="false" :validateOnBlur="true"
+            <div class="col-10 col-sm-8 col-md-4 col-xxl-3">
+                <Form v-slot="$form" :initialValues :resolver :validateOnValueUpdate="true" :validateOnBlur="true"
                     :validateOnMount="['email']" @submit="onFormSubmit" method="post" class="row gy-1">
 
                     <div class="col-12">
@@ -35,7 +36,7 @@ const onFormSubmit = async (state) => {
                     </div>
 
                     <div class="col-12">
-                        <InputText name="email" type="text" placeholder="Email address *" fluid required
+                        <InputText name="email" type="email" placeholder="Email address *" fluid required
                             :formControl="{ validateOnValueUpdate: true }" />
                         <Message v-if="$form?.email?.invalid" severity="error" size="small" variant="simple">{{
                             $form?.email?.error?.message }}</Message>

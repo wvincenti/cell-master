@@ -1,7 +1,5 @@
 import { defineStore } from 'pinia'
-import { shallowRef } from 'vue'
 import axios from 'axios'
-// import router from '@/router'
 
 const urlbase = import.meta.env.VITE_API_URL
 
@@ -23,29 +21,18 @@ export const getColLabel = (n) => {
   return label
 }
 
-// axios.interceptors.response.use(
-//   response => response,
-//   error => {
-//     if (error.response.status === 401) {
-//       console.log('axios pushing!');
-//       router.push('/login'); // Vue Router takes over
-//     }
-//     return Promise.reject(error);
-//   }
-// );
-
 export const useSpreadsheetStore = defineStore('spreadsheet', {
   state: () => ({
 
     columns: {}, // {sheetId: [col1, col2, ...], ...}
 
-    dirtyCells: {},
+    dirtyCells: [],
 
     sheets: [], // sheets' meta data
 
-    activeSheets: [],
+    //activeSheets: [],
 
-    cellTables: [], // sheets' cells
+    cellTables: [], // sheets' cells[[{sheet_id, col_id, col_index, row_index, data_type, cell_value, isDirty}, {...}, ...], [{...}], ...]
 
     tableCount: 0,
 
@@ -53,7 +40,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
     activeView: 0,
 
-    latestSheetId: null,
+    latestSheetId: 100,
 
     activeSheetIdx: null,
 
@@ -83,17 +70,21 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
     addEmptySheet() {
       console.time('DataCreation')
 
-      const newSheetIdx = this.cellTables.length
+      const newSheetIdx = this.cellTables.length;
+
       const sheet = []
       for (let i = 0; i < 20; i++) {
         sheet[i] = {}
         for (let j = 0; j < 11; j++) {
           sheet[i][`${j}`] = {
-            value: '',
-            row: i,
-            col: j,
+            cell_value: '',
+            old_value: '',
+            row_index: i,
+            col_index: j,
             isDirty: false,
-            sheet_id: this.latestSheetId,
+            sheet_id: null,
+            col_id: null,
+            data_type: 'string'
           }
         }
       }
@@ -110,8 +101,8 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       this.activeTab = newSheetIdx
 
       const newSheet = {
-        id: this.latestSheetId,
-        name: null,
+        id: null,
+        name: `sheet ${this.sheets.length+1}`,
         cols: [],
       }
 
@@ -120,20 +111,33 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       console.log(this.cellTables)
       return newSheetIdx
     },
-
+    
+    // {sheet_id, col_id, col_index, row_index, data_type, cell_value, old_value, isDirty}
     updateCell(newValue, row, col, tab) {
+      const sheetId = this.sheets[this.activeTab]['id'];
+
       const cell = this.cellTables[tab][row][col]
-      cell.value = newValue
+      cell.value = newValue;
       console.log(this.dirtyCells[cell.sheet_id])
+
+      // creates empty cell array ** consider moving the logic when sheet is created
       if (this.dirtyCells?.[cell.sheet_id] == null) this.dirtyCells[cell.sheet_id] = []
 
-      cell.isDirty = true
+      if (cell.cell_value != cell.old_value) {
+        
+        cell.isDirty = true;
+
+        if(!this.dirtyCells[tab]) this.dirtyCells[tab] = [];
+
+        this.dirtyCells[tab].push(cell);
+      
+      }
 
       this.dirtyCells[cell.sheet_id].push(cell)
 
       console.log(this.dirtyCells[cell.sheet_id])
 
-      return cell
+      return cell;
     },
 
     async fetchSheetSchema() {
@@ -233,18 +237,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       this.loading = false
     },
 
-    async loginUser(body) {
-      const response = await axios.post(`${urlbase}/api/login`, body);
-      console.log(response);
-      return response;
-    },
-
-
-    async registerUser(body) {
-      const response = await axios.post(`${urlbase}/api/register`, body)
-      return response;
-    },
-
+    
     async updateName(newName, tableName, sheetId, colId = null) {
       console.log('updading name of '+ tableName);
       let id;
@@ -257,7 +250,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
           sheet = this.sheets.find((sheet) => sheet.id == sheetId);
 
-          console.log('sheet Found')
+          console.log('sheet Found');
           console.log(sheet);
 
           oldName = sheet.name
@@ -265,7 +258,6 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
           sheet.name = newName;
 
           break;
-        
       }
       const response = axios.post(`${urlbase}/api/updateName`, { sheet_id: id, col_id: null, new_name: newName, table_name: tableName });
 

@@ -1,3 +1,25 @@
+<template>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col p-1">
+                <VueTreeDnd @add-sheet="() => { console.log('event recieved') }" @move="moveHandler"
+                    @setExpanded="handleSetExpanded" @rename="(arg1, arg2, arg3) => console.log('renaming')"
+                    :component="TreeMenuRenderer" v-model="navigator">
+                </VueTreeDnd>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col p-1">
+                <!-- <TreeMenuWrapper :sheets="newNavigator"></TreeMenuWrapper> -->
+                <!-- <TableNavigator @add-sheet="addSheet" :navigator="navigator"></TableNavigator> -->
+                <SheetMenuWrapper :menu="sheetMenu"></SheetMenuWrapper>
+
+            </div>
+        </div>
+    </div>
+</template>
+
+
 <script setup>
 import { useSpreadsheetStore, getColLabel } from '@/stores/spreadsheet';
 import TableNavigator from './TableNavigator.vue';
@@ -77,7 +99,7 @@ function handleSetExpanded(id, isExpanded) {
 
 onMounted(async () => {
     try {
-        await spreadsheetStore.fetchSheetSchema();
+        // await spreadsheetStore.fetchSheetSchema();
         console.log(spreadsheetStore.sheets);
     } catch (e) {
         console.log(e.code)
@@ -131,24 +153,3 @@ function moveHandler(movM) {
 }
 
 </script>
-
-<template>
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col p-1">
-                <VueTreeDnd @add-sheet="() => { console.log('event recieved') }" @move="moveHandler"
-                    @setExpanded="handleSetExpanded" @rename="(arg1, arg2, arg3) => console.log('renaming')"
-                    :component="TreeMenuRenderer" v-model="navigator">
-                </VueTreeDnd>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col p-1">
-                <!-- <TreeMenuWrapper :sheets="newNavigator"></TreeMenuWrapper> -->
-                <!-- <TableNavigator @add-sheet="addSheet" :navigator="navigator"></TableNavigator> -->
-                <SheetMenuWrapper :menu="sheetMenu"></SheetMenuWrapper>
-
-            </div>
-        </div>
-    </div>
-</template>

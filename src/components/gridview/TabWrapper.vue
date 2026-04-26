@@ -2,16 +2,16 @@
 import { ref, computed, onBeforeMount, onUpdated, onMounted } from 'vue';
 import { Tabs, Tab, TabList, TabPanel, DataTable, Column, InputText } from 'primevue';
 import { getColLabel } from '@/stores/spreadsheet';
-import { spread } from 'axios';
 
 const props = defineProps({
     activeTab: Number,
-    sheetCount: Number,
+    sheetNames: Array,
     tableData: Array,
     contHeight: Number,
+
 });
 
-const emit = defineEmits(['cell-edited', 'tabSelect']);
+const emit = defineEmits(['cell-edited', 'tab-select']);
 
 const tabListRef = ref(null);
 const tableHeight = computed(() => props.contHeight - tabListRef.value?.offsetHeight);
@@ -43,7 +43,7 @@ function onCellEditComplete(e) {
     if (editedCell != oldInputValue.value) {
         emit('cell-edited', oldInputValue.value, e.index, col, props.activeTab, editedCell.sheet_id);
     }
-
+    
     oldInputValue.value = '';
 }
 
@@ -53,21 +53,21 @@ function onCellInit(e){
     oldInputValue.value = data[col]['value'];
 }
 
-
-
 </script>
 
 <template>
     <Tabs :value="activeTab" scrollable>
         <TabList :pt="{ root: { onVnodeMounted: (vnode) => onRootMounted(vnode.el) } }">
-            <Tab :pt="{ root: { class: 'py-2' } }" v-for="(cTable, idx) in sheetCount" :key="'tab-btn-' + idx"
-                :value="idx" @click="$emit('tabSelect', idx)">
-                {{ 'View ' + idx }}
+            <Tab :pt="{ root: { class: 'py-2' } }" v-for="(name, idx) in sheetNames" :key="'tab-btn-' + idx"
+                :value="idx" @click="$emit('tab-select', idx)">
+                {{ name }}
             </Tab>
         </TabList>
         <TabPanels :pt="{ root: { class: 'p-0' } }">
             <TabPanel :value="activeTab">
-                <DataTable @cell-edit-init="onCellInit" @cell-edit-complete="onCellEditComplete" 
+                <DataTable 
+                    @cell-edit-init="onCellInit" 
+                    @cell-edit-complete="onCellEditComplete" 
                     edit-mode="cell" 
                     :value="tableData" size="small"
                     tableStyle="min-width: 50rem" 

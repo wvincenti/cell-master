@@ -1,43 +1,20 @@
 <script setup>
-import { ref } from 'vue';
-import { Splitpanes, Pane } from 'splitpanes';
-import GridContainer from './components/gridview/GridContainer.vue';
+import { RouterView } from 'vue-router';
 import HeaderContainer from './components/header/HeaderContainer.vue';
-import DashboardContainer from './components/navigatorview/DashboardContainer.vue';
-import ToolsContainer from './components/toolview/ToolsContainer.vue';
-
-const isTableResized = ref(false);
 
 </script>
 
 <template>
 
+<div class="h-100 d-flex flex-column bg-secondary">
+  <HeaderContainer></HeaderContainer>
+    <RouterView />
 
-
-  <div class="pane-wrapper bg-secondary">
-    <HeaderContainer></HeaderContainer>
-
-    <splitpanes class="main-layout default-them bg-secondary">
-      <pane size="30" max-size="30" class="bg-black">
-        <DashboardContainer @add-sheet="() => { console.log('event recieved') }"></DashboardContainer>
-      </pane>
-      <pane>
-        <splitpanes horizontal class="default-theme main-layout " @resized="() => isTableResized = true">
-          <pane class="bg-secondary" size="70" max-size="100" min-size="0">
-            <RouterView class="bg-secondary"/>
-          </pane>
-          <pane size="30">
-            <ToolsContainer></ToolsContainer>
-          </pane>
-        </splitpanes>
-      </pane>
-    </splitpanes>
-
-  </div>
   <footer ref="footerRef" class="text-center align-middle bg-dark text-light"
     style="font-size: xx-small; height: 1rem;">
     by wvvincenti
   </footer>
+</div>
 </template>
 
 

@@ -9,7 +9,7 @@ import Aura from '@primeuix/themes/aura'
 
 import './assets/main.scss'
 import TabPanels  from 'primevue/tabpanels';
-import {DataTable, Column} from 'primevue';
+import {DataTable, Column, Ripple} from 'primevue';
 
 import { useAuthStore } from './stores/userauth';
 
@@ -26,8 +26,11 @@ app.use(router)
 app.use(PrimeVue, {
     theme: {
         preset: Aura
-    }
+    },
+    rippe: true,
 })
+
+app.directive('ripple', Ripple);
 
 app.component('TabPanels', TabPanels);
 app.component('DataTable', DataTable);

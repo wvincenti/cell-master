@@ -4,17 +4,21 @@ import { Form } from '@primevue/forms';
 import { useToast } from 'primevue/usetoast';
 
 import { useSpreadsheetStore } from '@/stores/spreadsheet';
+import { useAuthStore } from '@/stores/userauth';
 
 import { ref } from 'vue';
+import router from '@/router';
 
 const spreadsheetStore = useSpreadsheetStore();
+
+const authStore = useAuthStore();
 // const toast = useToast();
 
-const initialValues = ref({
-    username: '',
-    email: '',
-    password: ''
-});
+// const initialValues = ref({
+//     username: '',
+//     email: '',
+//     password: ''
+// });
 
 // const resolver = ({ values }) => {
 //     const errors = {};
@@ -36,22 +40,26 @@ const initialValues = ref({
 //     };
 // };
 
-const onFormSubmit = async ({valid, values}) => {
+const onFormSubmit = async ({ valid, values }) => {
     // See what's actually inside
-   // const { values, valid, states } = state;
-    console.log(values);
-    console.log(valid);
- //   console.log(states);
-
-    if (valid) {
-        // toast.add({ severity: 'success', summary: 'Form is submitted.', life: 3000 });
-        console.log('valid: ')
+    // const { values, valid, states } = state;
+    try {
         console.log(values);
-        const response = await spreadsheetStore.loginUser(values);
-        console.log(response);
+        console.log(valid);
+        //   console.log(states);
+
+        if (valid) {
+            // toast.add({ severity: 'success', summary: 'Form is submitted.', life: 3000 });
+            console.log('valid: ')
+            console.log(values);
+            const isAuth = await authStore.loginUser(values);
+        }
+
+        console.log('NOT VALID!');
+    } catch (ex) {
+        throw ex;
     }
 
-    console.log('NOT VALID!');
 }
 
 
@@ -59,24 +67,24 @@ const onFormSubmit = async ({valid, values}) => {
 
 <template>
 
-    <div class="container-fluid bg-secondary my-auto">
+    <div class="container-fluid my-auto">
         <div class="row justify-content-center align-items-center">
-            <div class="col-5">
+            <div class="col-10 col-sm-8 col-md-4 col-xxl-3">
 
-                <Form v-slot="$form" :initialValues :validateOnValueUpdate="false" :validateOnBlur="true"
+                <Form v-slot="$form" :validateOnValueUpdate="false" :validateOnBlur="true"
                     :validateOnMount="['email']" @submit="onFormSubmit" method="post" class="row gy-1">
 
                     <div class="col-12">
                         <InputText name="email" type="text" placeholder="Email" fluid required
                             :formControl="{ validateOnValueUpdate: true }" />
-                        <Message v-if="$form?.email?.invalid" severity="error" size="small" variant="simple">{{
-                            $form?.email?.error?.message }}</Message>
+                        <!-- <Message v-if="$form?.email?.invalid" severity="error" size="small" variant="simple">{{
+                            $form?.email?.error?.message }}</Message> -->
                     </div>
 
                     <div class="col-12">
                         <InputText name="password" type="text" placeholder="Password" fluid required />
-                        <Message v-if="$form?.password?.invalid" severity="error" size="small" variant="simple">{{
-                            $form?.password?.error?.message }}</Message>
+                        <!-- <Message v-if="$form?.password?.invalid" severity="error" size="small" variant="simple">{{
+                            $form?.password?.error?.message }}</Message> -->
                     </div>
 
                     <div class="col-12">
@@ -93,8 +101,8 @@ const onFormSubmit = async ({valid, values}) => {
                 <br>
                 <span>Log in as a guest</span>
                 or
-                <router-link to="/register" >
-                 <span class="text-white">register</span>
+                <router-link to="/register">
+                    <span class="text-white">register</span>
                 </router-link>
             </div>
         </div>
