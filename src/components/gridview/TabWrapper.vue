@@ -40,17 +40,17 @@ function onCellEditComplete(e) {
 
     const editedCell = props.tableData[e.index][col];
     console.log(editedCell);
-    if (editedCell != oldInputValue.value) {
+    if (editedCell.cell_value != oldInputValue.value) {
         emit('cell-edited', oldInputValue.value, e.index, col, props.activeTab, editedCell.sheet_id);
     }
-    
+    // emit('cell-edited', oldInputValue.value, e.index, col, props.activeTab, editedCell.sheet_id);
     oldInputValue.value = '';
 }
 
 function onCellInit(e){
     let {data, field} = e;
     let [col, value] = field.split('.');
-    oldInputValue.value = data[col]['value'];
+    oldInputValue.value = data[col]['cell_value'];
 }
 
 </script>
@@ -88,7 +88,7 @@ function onCellInit(e){
                             <span>{{ rowLables.index }}</span>
                         </template>
                     </Column>
-                    <Column v-for="(cols, i) in tableData?.[0]" :header="`${rowLables[i].label}`" :field="`${i + '.value'}`"
+                    <Column v-for="(cols, i) in tableData?.[0]" :header="`${rowLables[i].label}`" :field="`${i + '.cell_value'}`"
                         style="min-width: 10rem;">
                         <template #editor="{ data, field }">
                             <InputText v-model="oldInputValue" class="h-100 w-100 border-0 rounded-0"></InputText>
