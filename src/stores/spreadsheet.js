@@ -122,7 +122,6 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
                 for (let j = 0; j < 11; j++) {
                     if (i == 0) {
                         newSheet.cols[j] = {
-                            id: null,
                             col_index: j,
                             name: getColLabel(j+1),
                             data_type: 'string',
@@ -235,12 +234,9 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
             const dirtySheets = this.dirtySheets[tab];
 
-            
             console.log(dirtyCells)
 
             console.log(dirtySheets);
-
-            //if (dirtyCells.length < 1 && !dirtySheets.isDirty && dirtySheets.cols.length < 1) return;
 
             console.log('send FLUSH request');
 
@@ -250,7 +246,31 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
                 deleted_cells: this.cellsToDelete[tab],
             })
 
-            console.log(response)
+            if (response.status == 200) {
+                this.sheets[tab].id = response.data;
+                this.sheets[tab].isDirty = false;
+
+                const updatedCells = this.dirtyCells[tab].map((cell) => {
+                    return cell;
+                });
+
+                updatedCells.forEach((savedCell) => {
+                    savedCell.sheet_id = response.data;
+                    savedCell.isDirty = false;
+                });
+
+                const updatedCols = this.dirtySheets[tab].cols.map((col) => {
+                    return col;
+                })
+
+                updatedCols.forEach((savedCol) => {
+                    savedCol.isDirty = false;
+                    savedCol.isNew = false;
+                })
+            }
+            console.log(response);
+
+            this.isLoading = false;
         },
 
         async saveCells(dirtyCells) {
