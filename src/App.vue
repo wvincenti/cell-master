@@ -1,21 +1,26 @@
-<script setup>
-import { RouterView } from 'vue-router';
-import HeaderContainer from './components/header/HeaderContainer.vue';
-
-</script>
-
 <template>
-
-<div class="h-100 d-flex flex-column bg-secondary">
-  <HeaderContainer></HeaderContainer>
+  <div class="h-100 d-flex flex-column bg-secondary">
+    <HeaderContainer></HeaderContainer>
     <RouterView />
 
-  <footer ref="footerRef" class="text-center align-middle bg-dark text-light"
-    style="font-size: xx-small; height: 1rem;">
-    by wvvincenti
-  </footer>
-</div>
+    <footer ref="footerRef" class="text-center align-middle bg-dark text-light"
+      style="font-size: xx-small; height: 1rem;">
+      by wvvincenti
+    </footer>
+  </div>
 </template>
+
+<script setup>
+import { RouterView } from 'vue-router';
+import { useSpreadsheetStore } from './stores/spreadsheet';
+import HeaderContainer from './components/header/HeaderContainer.vue';
+import { provide } from 'vue';
+
+const spreadsheetStore = useSpreadsheetStore();
+
+provide('deleteSheet', spreadsheetStore.deleteSheetFromDB);
+
+</script>
 
 
 <style scoped>

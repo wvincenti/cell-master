@@ -12,7 +12,7 @@
             <div class="col p-1">
                 <!-- <TreeMenuWrapper :sheets="newNavigator"></TreeMenuWrapper> -->
                 <!-- <TableNavigator @add-sheet="addSheet" :navigator="navigator"></TableNavigator> -->
-                <SheetMenuWrapper :menu="sheetMenu"></SheetMenuWrapper>
+                <SheetMenuWrapper :menu="sheetMenu" ></SheetMenuWrapper>
 
             </div>
         </div>
@@ -35,8 +35,6 @@ const spreadsheetStore = useSpreadsheetStore()
 
 const expandedKeys = ref({});
 
-const tabIndex = computed(() => spreadsheetStore.cellTables.length);
-
 const navigator = ref([]);
 
 const sheetMenu = computed(() => [
@@ -46,14 +44,15 @@ const sheetMenu = computed(() => [
         items: spreadsheetStore.sheets.map((sheet) => {
             return {
                 label: sheet.name,
-                icon: 'pi pi-plus'
+                icon: 'pi pi-plus',
+                sheet_id: sheet.id
             }
         })
     }
 ])
 
 provide('addSheet', addSheet);
-provide('deleteSheet', deleteSheet);
+//provide('deleteSheet', deleteSheet);
 provide('updateName', spreadsheetStore.updateName);
 
 // Watch the store for changes and update the local navigator ref
@@ -101,6 +100,8 @@ onMounted(async () => {
     try {
         // await spreadsheetStore.fetchSheetSchema();
         console.log(spreadsheetStore.sheets);
+        const schemas = await spreadsheetStore.fetchSheetSchema();
+        console.log(schemas);
     } catch (e) {
         console.log(e.code)
         if (e.status === 401) return router.push('/login');
