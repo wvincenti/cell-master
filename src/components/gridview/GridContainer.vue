@@ -13,8 +13,13 @@ const spreadsheetStore = useSpreadsheetStore();
 console.log('GRID HEIGHT: ' + props.containerHeight);
 
 const activeTab = computed(() => spreadsheetStore.activeTab);
-const sheetNames = computed(() => spreadsheetStore.sheets.map((sheet) => sheet.name));
-const tableData = computed(() => spreadsheetStore.cellTables[activeTab.value]);
+
+const sheetNames = computed(() => {
+    return Array.from(spreadsheetStore.sheets.values(), (sheet) => sheet.name);
+});
+
+const tableData = computed(() => spreadsheetStore.activeTableIds[activeTab.value]);
+
 
 console.log('TABLE DATA ***')
 console.log(tableData.value);
@@ -25,11 +30,20 @@ const tabContainerRef = ref(null);
 
 const { height } = useElementSize(tabContainerRef);
 
-onBeforeMount( async () => {
+onBeforeMount(async () => {
     // await spreadsheetStore.fetchLatestSheetId();
     console.log('**** sheets ***');
     console.log(spreadsheetStore.sheets)
-    if (spreadsheetStore.sheets.length == 0) spreadsheetStore.addEmptySheet();
+    if (spreadsheetStore.activeTableCount == 0) {
+
+        const { sheetMeta, cellTable } = spreadsheetStore.createEmptySheet();
+
+        spreadsheetStore.addSheet({ sheetMeta, cellTable });
+
+        spreadsheetStore.activeSheetIds.push(sheetMeta.id);
+
+        spreadsheetStore.setActiveTab(spreadsheetStore.activeSheetIds.length - 1);
+    }
 });
 
 onBeforeUpdate(() => {
@@ -40,7 +54,7 @@ function onCellEdited(newValue, row, col, activeTab) {
     spreadsheetStore.updateCell(newValue, row, col, activeTab);
 }
 
-function onTabSelect(idx){
+function onTabSelect(idx) {
     spreadsheetStore.setActiveTab(idx);
 }
 
@@ -49,14 +63,10 @@ function onTabSelect(idx){
 <template>
     <div ref="tabContainerRef" id="grid-view-container" class="container-fluid h-100">
         <div class="row h-100">
-            <div  class="col px-0 mytab-container bg-black" style="min-height: 0 !important; overflow: hidden !important;">
-                <TabWrapper
-                    @cell-edited="onCellEdited"
-                    @tab-select="onTabSelect"
-                    :contHeight="height" 
-                    :activeTab="activeTab" 
-                    :sheetNames="sheetNames"
-                    :tableData="tableData">
+            <div class="col px-0 mytab-container bg-black"
+                style="min-height: 0 !important; overflow: hidden !important;">
+                <TabWrapper @cell-edited="onCellEdited" @tab-select="onTabSelect" :contHeight="height"
+                    :activeTab="activeTab" :sheetNames="sheetNames" :tableData="tableData">
                 </TabWrapper>
             </div>
         </div>

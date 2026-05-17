@@ -30,8 +30,11 @@ import TreeMenuWrapper from './TreeMenuWrapper.vue';
 import SheetMenuWrapper from './SheetMenuWrapper.vue';
 import router from '@/router';
 
+const spreadsheetStore = useSpreadsheetStore();
 
-const spreadsheetStore = useSpreadsheetStore()
+provide('addSheet', spreadsheetStore.addSheet);
+//provide('deleteSheet', deleteSheet);
+provide('updateName', spreadsheetStore.updateName);
 
 const expandedKeys = ref({});
 
@@ -41,7 +44,7 @@ const sheetMenu = computed(() => [
     {
         label: 'Sheets',
         icon: 'pi pi-table',
-        items: spreadsheetStore.sheets.map((sheet) => {
+        items: spreadsheetStore.sheetsList.map((sheet) => {
             return {
                 label: sheet.name,
                 icon: 'pi pi-plus',
@@ -51,41 +54,39 @@ const sheetMenu = computed(() => [
     }
 ])
 
-provide('addSheet', addSheet);
-//provide('deleteSheet', deleteSheet);
-provide('updateName', spreadsheetStore.updateName);
+
 
 // Watch the store for changes and update the local navigator ref
-watch(() => spreadsheetStore.sheets, (newSheets) => {
-    navigator.value = newSheets?.map((sheet, index) => {
-        return {
-            id: `${sheet.id}`,
-            name: sheet.name || 'Sheet ' + sheet.id,
-            type: 'table',
-            // Use the local expanded state
-            expanded: expandedKeys.value[sheet.id] || false,
-            children: sheet.cols?.map((col) => ({
-                id: `${sheet.id}-${index}-${col.id}`,
-                name: col.name || getColLabel(col.id),
-                expanded: false,
-                children: [],
-                type: 'col'
-            })),
+// watch(() => spreadsheetStore.sheets, (newSheets) => {
+//     navigator.value = newSheets?.map((sheet, index) => {
+//         return {
+//             id: `${sheet.id}`,
+//             name: sheet.name || 'Sheet ' + sheet.id,
+//             type: 'table',
+//             // Use the local expanded state
+//             expanded: expandedKeys.value[sheet.id] || false,
+//             children: sheet.cols?.map((col) => ({
+//                 id: `${sheet.id}-${index}-${col.id}`,
+//                 name: col.name || getColLabel(col.id),
+//                 expanded: false,
+//                 children: [],
+//                 type: 'col'
+//             })),
 
-            showAdd: true,
-            index: index, // Use the actual index
-        };
-    });
-}, { immediate: true, deep: true });
+//             showAdd: true,
+//             index: index, // Use the actual index
+//         };
+//     });
+// }, { immediate: true, deep: true });
 
 
-const newNavigator = spreadsheetStore.sheets.map((sheet) => {
-    return {
-        id: sheet.id,
-        name: sheet.name,
-        cols: sheet.cols.map((col) => { col.id, col.name })
-    }
-})
+// const newNavigator = spreadsheetStore.sheets.map((sheet) => {
+//     return {
+//         id: sheet.id,
+//         name: sheet.name,
+//         cols: sheet.cols.map((col) => { col.id, col.name })
+//     }
+// })
 
 // Now, when you update expandedKeys, the navigator will still be reactive 
 // because it's a ref being watched or updated.
@@ -109,28 +110,28 @@ onMounted(async () => {
     }
 })
 
-async function addSheet(id) {
-    console.log('ADDING SHEET!')
-    console.log(id);
-    const sheet = await spreadsheetStore.fetchCells(id);
-    console.log('sheet is: ' + sheet);
-    let newIdx = spreadsheetStore.addEmptySheet();
-    // spreadsheetStore.cellTables()
-    sheet.forEach((row, i) => {
-        console.log(row)
-        const tRow = spreadsheetStore.cellTables[newIdx][i];
-        console.log(tRow);
-        for (const col in row) {
-            if (Object.hasOwn(tRow, col)) {
-                console.log(col);
-                spreadsheetStore.cellTables[newIdx][i][col] = row[col];
-            }
-        }
+// async function addSheet(id) {
+//     console.log('ADDING SHEET!')
+//     console.log(id);
+//     const sheet = await spreadsheetStore.fetchCells(id);
+//     console.log('sheet is: ' + sheet);
+//     let newIdx = spreadsheetStore.addEmptySheet();
+//     // spreadsheetStore.cellTables()
+//     sheet.forEach((row, i) => {
+//         console.log(row)
+//         const tRow = spreadsheetStore.cellTables[newIdx][i];
+//         console.log(tRow);
+//         for (const col in row) {
+//             if (Object.hasOwn(tRow, col)) {
+//                 console.log(col);
+//                 spreadsheetStore.cellTables[newIdx][i][col] = row[col];
+//             }
+//         }
 
-        console.log(row);
-    })
-    spreadsheetStore.setActiveTab(newIdx);
-}
+//         console.log(row);
+//     })
+//     spreadsheetStore.setActiveTab(newIdx);
+// }
 
 async function deleteSheet(sheetId) {
     try {
