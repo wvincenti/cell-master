@@ -1,19 +1,24 @@
 <template>
-    <div class="container-fluid">
-        <div class="row">
+    <div class="container-fluid h-100">
+        <!-- <div class="row">
             <div class="col p-1">
                 <VueTreeDnd @add-sheet="() => { console.log('event recieved') }" @move="moveHandler"
                     @setExpanded="handleSetExpanded" @rename="(arg1, arg2, arg3) => console.log('renaming')"
                     :component="TreeMenuRenderer" v-model="navigator">
                 </VueTreeDnd>
             </div>
-        </div>
-        <div class="row">
+        </div> -->
+        <div class="row h-50">
             <div class="col p-1">
                 <!-- <TreeMenuWrapper :sheets="newNavigator"></TreeMenuWrapper> -->
                 <!-- <TableNavigator @add-sheet="addSheet" :navigator="navigator"></TableNavigator> -->
-                <SheetMenuWrapper :menu="sheetMenu" ></SheetMenuWrapper>
+                <SheetMenuWrapper></SheetMenuWrapper>
 
+            </div>
+        </div>
+        <div class="row h-50">
+            <div class="col">
+                <SheetListWrapper></SheetListWrapper>
             </div>
         </div>
     </div>
@@ -23,11 +28,12 @@
 <script setup>
 import { useSpreadsheetStore, getColLabel } from '@/stores/spreadsheet';
 import TableNavigator from './TableNavigator.vue';
-import { onMounted, computed, ref, watch, provide } from 'vue';
+import { onMounted, computed, ref, watch, provide, onUpdated } from 'vue';
 import TreeMenuRenderer from './TreeMenuRenderer.vue';
 import VueTreeDnd from 'vue-tree-dnd'
 import TreeMenuWrapper from './TreeMenuWrapper.vue';
 import SheetMenuWrapper from './SheetMenuWrapper.vue';
+import SheetListWrapper from './SheetListWrapper.vue';
 import router from '@/router';
 
 const spreadsheetStore = useSpreadsheetStore();
@@ -40,19 +46,6 @@ const expandedKeys = ref({});
 
 const navigator = ref([]);
 
-const sheetMenu = computed(() => [
-    {
-        label: 'Sheets',
-        icon: 'pi pi-table',
-        items: spreadsheetStore.sheetsList.map((sheet) => {
-            return {
-                label: sheet.name,
-                icon: 'pi pi-plus',
-                sheet_id: sheet.id
-            }
-        })
-    }
-])
 
 
 
@@ -110,6 +103,9 @@ onMounted(async () => {
     }
 })
 
+onUpdated(() => {
+    console.log('UPDATING DASHBOARD CONTAINER');
+})
 // async function addSheet(id) {
 //     console.log('ADDING SHEET!')
 //     console.log(id);

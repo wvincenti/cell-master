@@ -1,13 +1,15 @@
 <template>
 
-    <PanelMenu :model="menu">
+    <PanelMenu :model="sheetsMenu">
 
         <template #item="{ item, hasSubmenu, root, label, props }">
-            <div class="container-fluid">
-                <div class="row justify-items-between align-content-center">
+            <div :key="item.key" class="container-fluid">
+                <div :key="item.key" class="row justify-items-between align-content-center">
                     <div v-if="(hasSubmenu)" class="col"><i :class="item.icon"></i></div>
+
                     <div class="col align-middle">{{ item.label }}</div>
                     <div class="col align-middle">{{ item.updated_at }}</div>
+                    <div class="col">ID: {{ item.key }}</div>
                     <!-- <div class="col align-middle">{{ hasSubmenu }}</div>
                     <div class="col align-middle">{{ root }}</div>
                     <div class="col align-middle">{{ item.level }}</div> -->
@@ -16,7 +18,8 @@
                             <Button icon="pi pi-download" rounded variant="text" size="button"></Button>
                         </div>
                         <div class="col">
-                            <Button icon="pi pi-trash" rounded variant="text" size="button" severity="danger" @click="() => deleteSheet(item.sheet_id)"></Button>
+                            <Button icon="pi pi-trash" rounded variant="text" size="button" severity="danger"
+                                @click="() => deleteSheet(item.sheet_id)"></Button>
                         </div>
                     </template>
                 </div>
@@ -29,13 +32,18 @@
 import { PanelMenu, Button } from 'primevue';
 import draggable from 'vuedraggable';
 import NestedDraggable from './NestedTest.vue';
-import { inject } from 'vue';
-const props = defineProps({
-    menu: Object
-});
+import { inject, computed } from 'vue';
+import { useSpreadsheetStore } from '@/stores/spreadsheet';
+import { storeToRefs } from 'pinia';
+// const props = defineProps({
+//     menu: Object
+// });
+const spreadsheetStore = useSpreadsheetStore();
+
+const { sheetsMenu } = storeToRefs(spreadsheetStore);
 
 const deleteSheet = inject('deleteSheet', () => { console.warn('Component uses deleteSheet action') });
 
-console.log('MENU');
-console.log(props.menu);
+
+
 </script>

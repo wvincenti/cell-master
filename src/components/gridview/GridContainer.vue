@@ -3,6 +3,7 @@ import { onMounted, ref, computed, onBeforeUpdate, onBeforeMount } from 'vue';
 import { useSpreadsheetStore } from '@/stores/spreadsheet';
 import TabWrapper from './TabWrapper.vue';
 import { useElementSize } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
 
 const props = {
     containerHeight: { type: Number, isTableResize: Boolean }
@@ -14,17 +15,15 @@ console.log('GRID HEIGHT: ' + props.containerHeight);
 
 const activeTab = computed(() => spreadsheetStore.activeTab);
 
-const sheetNames = computed(() => {
-    return Array.from(spreadsheetStore.sheets.values(), (sheet) => sheet.name);
-});
+// const sheetNames = computed(() => {
+//     return Array.from(spreadsheetStore.sheets.values(), (sheet) => sheet.name);
+// });
+const { activeSheetNames } = storeToRefs(spreadsheetStore);
 
-const tableData = computed(() => spreadsheetStore.cellTables[spreadsheetStore.activeTableOrderIds[activeTab.value]]);
+const { activeTable } = storeToRefs(spreadsheetStore);
 
 
 console.log('TABLE DATA ***')
-console.log(tableData.value);
-console.log(sheetNames.value);
-
 
 const tabContainerRef = ref(null);
 
@@ -34,16 +33,10 @@ onBeforeMount(async () => {
     // await spreadsheetStore.fetchLatestSheetId();
     console.log('**** sheets ***');
     console.log(spreadsheetStore.sheets)
-    if (spreadsheetStore.activeTableCount == 0) {
+    if (spreadsheetStore.activeTableOrderedIds == 0) {
 
-        const { sheetMeta, cellTable } = spreadsheetStore.createEmptySheet();
+        spreadsheetStore.addNewSheet(true);
 
-        spreadsheetStore.addSheet({ sheetMeta, cellTable });
-
-        spreadsheetStore.loadedSheetIds.push(sheetMeta.id);
-        spreadsheetStore.activeTableOrderIds.push(sheetMeta.id);
-
-        spreadsheetStore.setActiveTab(spreadsheetStore.activeTableOrderIds.length - 1);
     }
 });
 
@@ -67,7 +60,7 @@ function onTabSelect(idx) {
             <div class="col px-0 mytab-container bg-black"
                 style="min-height: 0 !important; overflow: hidden !important;">
                 <TabWrapper @cell-edited="onCellEdited" @tab-select="onTabSelect" :contHeight="height"
-                    :activeTab="activeTab" :sheetNames="sheetNames" :tableData="tableData">
+                    :activeTab="activeTab" :sheetNames="activeSheetNames" :tableData="activeTable">
                 </TabWrapper>
             </div>
         </div>

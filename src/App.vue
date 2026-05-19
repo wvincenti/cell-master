@@ -19,19 +19,8 @@ import { provide } from 'vue';
 const spreadsheetStore = useSpreadsheetStore();
 
 provide('deleteSheet', spreadsheetStore.deleteSheetFromDB);
-provide('fetchSheetFromDataBase', fetchSheetFromDataBase);
-
-
-async function fetchSheetFromDataBase(sheetId, isSetActive = false) {
-  const { sheetMeta, cellTable } = await spreadsheetStore.fetchSheetCells(sheetId);
-
-  sheetMeta.index = spreadsheetStore.tableCount; 
-
-  spreadsheetStore.addSheet({sheetMeta, cellTable});
-
-  if (isSetActive) spreadsheetStore.activeTab = sheetMeta.index;
-}
-
+// provide('fetchSheetFromDataBase', fetchSheetFromDataBase);
+// provide('addNewSheet', addNewSheet);
 </script>
 
 

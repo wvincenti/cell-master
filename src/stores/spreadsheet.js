@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
+import { activeBar } from '@primeuix/themes/aura/tabmenu'
 
 const urlbase = import.meta.env.VITE_API_URL
 
@@ -24,13 +25,11 @@ export const getColLabel = (n) => {
 export const useSpreadsheetStore = defineStore('spreadsheet', {
   state: () => ({
     sheets: new Map(), // sheets' meta data [{id:}]
-    sheetOrderIds: [],
+    sheetOrderedIds: [],
 
     cellTables: new Map(), // sheets' cells[[{sheet_id, col_id, col_index, row_index, data_type, cell_value, isDirty}, {...}, ...], [{...}], ...]
-    loadedSheetIds: [],
-    activeTableOrderIds: [],
-
-    
+    loadedSheetOrderedIds: [],
+    activeTableOrderedIds: [],
 
     activeTab: null,
 
@@ -38,28 +37,58 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
   }),
 
   getters: {
-
     sheetsList: (state) => Array.from(state.sheets.values()),
-
     cellTablesLists: (state) => Array.form(state.cellTables.values()),
-  
-    sheetCount: (state) => state.sheets.size,
 
-    newSheetId(){
-      return `n-${this.sheetCount}`;
+    sheetCount: (state) => state.sheets.size,
+    loadedSheetCount: (state) => state.cellTables.size,
+    activeTableCount: (state) => state.activeTableOrderedIds.length,
+
+    activeSheetNames: (state) => {
+      return state.activeTableOrderedIds.map((id) => {
+        return state.sheets.get(id)?.name
+      })
     },
 
+    activeTableId: (state) => state.activeTableOrderedIds[state.activeTab],
 
+    activeTable() {
+      return this.cellTables.get(this.activeTableId)
+    },
+
+    newSheetId() {
+      return `n-${this.sheetCount}`
+    },
+
+    storedSheets() {
+      return this.sheetsList.filter((sheet) => sheet.updated_at);
+    },
+
+    sheetsMenu() {
+      return [
+        {
+          label: 'Sheets',
+          icon: 'pi pi-table',
+          items: this.sheetsList.map((sheet) => {
+            return {
+              label: sheet.name,
+              icon: 'pi pi-plus',
+              sheet_id: sheet.id,
+              key: `sheet-item-${sheet.id}`,
+            }
+          }),
+        },
+      ]
+    },
 
     // workArea: (state) => {
     //   return state.sheets.map((sheet) => {
-    //     if (sheet.isLoaded) return sheet; 
+    //     if (sheet.isLoaded) return sheet;
     //   })
     // },
 
     // activeSheetIds: (state) => {
     //   return state.sheets.
-    
 
     // loadedSheetIds: (state) => {
     //   return Object.values(state.sheets).map((sheet) => {
@@ -118,13 +147,13 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
     },
 
     addSheet({ cellTable = {}, sheetMeta = {} } = {}) {
+      if (!sheetMeta.id) sheetMeta.id = this.newSheetId
 
-      if (!sheetMeta.id) sheetMeta.id = this.newSheetId;
+      this.sheets.set(sheetMeta.id, sheetMeta)
 
-      this.sheets.set(sheetMeta.id, sheetMeta);
-      
-      this.cellTables.set(sheetMeta.id, cellTable);
+      this.cellTables.set(sheetMeta.id, cellTable)
 
+      this.loadedSheetOrderedIds.push(sheetMeta.id)
     },
 
     // {sheet_id, col_id, col_index, row_index, data_type, cell_value, old_value, isDirty}
@@ -139,30 +168,31 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
     },
 
     async fetchSheetSchema() {
-      this.loading = true;
-      const response = await axios.get(`${urlbase}/api/db`);
-      const sheets = response.data;
-      console.log('SCHEMAA: ');
-      console.log(sheets);
+      this.loading = true
+      const response = await axios.get(`${urlbase}/api/db`)
+      const sheets = response.data
+      console.log('SCHEMAA: ')
+      console.log(sheets)
       // for (const [key, sheet] of Object.entries(sheets)) {
       //   this.sheets.push(sheet);
       // }
       sheets.forEach((sheet) => {
         this.sheets.set(sheet.id, sheet);
-      });
+        this.sheetOrderedIds.push(sheet.id);
+      })
 
-      this.loading = false;
+      this.loading = false
     },
 
     setActiveTab(tabIdx) {
       // console.log('setting active tab :' + tabIdx)
       // this.activeTab = tabIdx
       // this.activeTable = this.cellTables[tabIdx]
-      this.activeTab = tabIdx;
+      this.activeTab = tabIdx
     },
 
     setAtiveTabTableId(id) {
-      this.activeTab;
+      this.activeTab
     },
 
     async fetchSheetCells(sheetId) {
@@ -171,6 +201,8 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       const response = await axios.get(`${urlbase}/api/cells/${sheetId}`)
 
       this.loading = false
+
+      console.log(response.data);
 
       return response.data
     },
@@ -289,6 +321,33 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       }
 
       return { sheetMeta, cellTable }
+    },
+
+    /* *** MACRO ACTIONS *** */
+
+    async fetchSheetFromDataBase(sheetId, isSetActive = false) {
+      const { sheetMeta, cellTable } = await this.fetchSheetCells(sheetId)
+
+      sheetMeta.index = this.tableCount
+
+      this.addSheet({ sheetMeta, cellTable })
+
+      if (isSetActive) this.activeTab = this.activeTableCount
+    },
+
+    addNewSheet(isSetActive = true) {
+      const newestSheetNum = this.sheetCount
+
+      const { sheetMeta, cellTable } = this.createEmptySheet(newestSheetNum)
+
+      this.addSheet({ sheetMeta, cellTable })
+
+      this.loadedSheetOrderedIds.push(sheetMeta.id)
+      this.activeTableOrderedIds.push(sheetMeta.id)
+
+      const lastTabIndex = this.activeTableOrderedIds.length - 1
+
+      if (isSetActive) this.setActiveTab(lastTabIndex)
     },
   },
 })
