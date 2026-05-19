@@ -18,7 +18,7 @@ const sheetNames = computed(() => {
     return Array.from(spreadsheetStore.sheets.values(), (sheet) => sheet.name);
 });
 
-const tableData = computed(() => spreadsheetStore.activeTableIds[activeTab.value]);
+const tableData = computed(() => spreadsheetStore.cellTables[spreadsheetStore.activeTableOrderIds[activeTab.value]]);
 
 
 console.log('TABLE DATA ***')
@@ -40,9 +40,10 @@ onBeforeMount(async () => {
 
         spreadsheetStore.addSheet({ sheetMeta, cellTable });
 
-        spreadsheetStore.activeSheetIds.push(sheetMeta.id);
+        spreadsheetStore.loadedSheetIds.push(sheetMeta.id);
+        spreadsheetStore.activeTableOrderIds.push(sheetMeta.id);
 
-        spreadsheetStore.setActiveTab(spreadsheetStore.activeSheetIds.length - 1);
+        spreadsheetStore.setActiveTab(spreadsheetStore.activeTableOrderIds.length - 1);
     }
 });
 

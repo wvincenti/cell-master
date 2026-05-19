@@ -27,10 +27,10 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
     sheetOrderIds: [],
 
     cellTables: new Map(), // sheets' cells[[{sheet_id, col_id, col_index, row_index, data_type, cell_value, isDirty}, {...}, ...], [{...}], ...]
-
-    activeSheetIds: [],
-
     loadedSheetIds: [],
+    activeTableOrderIds: [],
+
+    
 
     activeTab: null,
 
@@ -40,6 +40,8 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
   getters: {
 
     sheetsList: (state) => Array.from(state.sheets.values()),
+
+    cellTablesLists: (state) => Array.form(state.cellTables.values()),
   
     sheetCount: (state) => state.sheets.size,
 
@@ -142,9 +144,12 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       const sheets = response.data;
       console.log('SCHEMAA: ');
       console.log(sheets);
-      for (const [key, sheet] of Object.entries(sheets)) {
-        this.sheets.push(sheet);
-      }
+      // for (const [key, sheet] of Object.entries(sheets)) {
+      //   this.sheets.push(sheet);
+      // }
+      sheets.forEach((sheet) => {
+        this.sheets.set(sheet.id, sheet);
+      });
 
       this.loading = false;
     },
