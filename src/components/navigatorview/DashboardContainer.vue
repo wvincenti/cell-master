@@ -13,11 +13,12 @@
                 <!-- <TreeMenuWrapper :sheets="newNavigator"></TreeMenuWrapper> -->
                 <!-- <TableNavigator @add-sheet="addSheet" :navigator="navigator"></TableNavigator> -->
                 <SheetMenuWrapper></SheetMenuWrapper>
+                <WorkAreaWrapper></WorkAreaWrapper>
 
             </div>
         </div>
         <div class="row h-50">
-            <div class="col">
+            <div class="col px-1">
                 <SheetListWrapper></SheetListWrapper>
             </div>
         </div>
@@ -34,6 +35,7 @@ import VueTreeDnd from 'vue-tree-dnd'
 import TreeMenuWrapper from './TreeMenuWrapper.vue';
 import SheetMenuWrapper from './SheetMenuWrapper.vue';
 import SheetListWrapper from './SheetListWrapper.vue';
+import WorkAreaWrapper from './WorkAreaWrapper.vue';
 import router from '@/router';
 
 const spreadsheetStore = useSpreadsheetStore();
