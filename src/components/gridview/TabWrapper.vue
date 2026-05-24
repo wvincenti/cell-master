@@ -31,11 +31,6 @@ const rowLables = computed(() => props.tableData?.map((row, i) => {
 
 const oldInputValue = ref(null);
 
-const testModel = ref([
-    { id: '0', name: 'Header I', content: 'Content 1' },
-    { id: '1', name: 'Header II', content: 'Content 2' },
-    { id: '2', name: 'Header III', content: 'Content 3' }
-]);
 
 // props.sheetNames.forEach((s) => { testModel.value.push(s) })
 
@@ -100,8 +95,8 @@ const onElementDragged = (event) => {
 </script>
 
 <template>
-    <Tabs :value="activeTab" scrollable>
-        <TabList asChild>
+    <Tabs :pt="{ root: { class: 'h-100' }}" :value="activeTab" scrollable>
+        <TabList asChild :pt="{ root: { onVnodeMounted: (vnode) => onRootMounted(vnode.el) } }">
             <draggable @change="onElementDragged" tag="div" v-model="activeTableOrderedIds" item-key="id">
                 <template #item="{ element, index }">
                     <Tab :pt="{ root: { class: 'py-2' } }" :value="index" @click="$emit('tab-select', index)">
@@ -110,8 +105,8 @@ const onElementDragged = (event) => {
                 </template>
             </draggable>
         </TabList>
-        <TabPanels :pt="{ root: { class: 'p-0' } }">
-            <TabPanel :value="activeTab">
+        <TabPanels :pt="{ root: { class: 'h-100' }}"> 
+            <TabPanel :value="activeTab" :pt="{ root: { class: 'p-0 h-100'} }">
                 <DataTable @cell-edit-init="onCellInit" @cell-edit-complete="onCellEditComplete" edit-mode="cell"
                     :value="tableData" size="small" tableStyle="min-width: 50rem" showGridlines scrollable
                     :scrollHeight="`${tableHeight}px`" :pt="{
@@ -120,7 +115,8 @@ const onElementDragged = (event) => {
                             bodycell: ({ state }) => ({
                                 class: [{ 'p-0': state['d_editing'] }]
                             })
-                        }
+                        },
+                        // tablecontainer:
                     }">
                     <Column frozen>
                         <template #body="rowLables">
