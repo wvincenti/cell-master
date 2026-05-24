@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
-import { FlatESLint } from 'eslint/use-at-your-own-risk'
 
 const urlbase = import.meta.env.VITE_API_URL
 
@@ -244,10 +243,11 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
           })
 
           dirtyCells.forEach((cell) => {
-            this.setCellNewDirtyState(cell, {
+            this.patchCellState(cell, {
               isNew: false,
               isDirty: false,
               sheet_id: response.data,
+              old_value: cell.cell_value
             })
           })
         }
@@ -298,10 +298,21 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
       const cell = this.cellTables.get(sheet_id)?.[row_index]?.[`${col_index}`]
 
+      console.log('STORE CELL');
+      console.log(cell)
       if (!cell) {
         console.warn(`Cell not found for sheet ${sheet_id}, row ${row_index}, column ${col_index}.`)
         return
       }
+
+      const { cell_value } = updates
+      
+      if (cell_value && cell_value != cell.old_vlaue) {
+        updates.isDirty = true
+      }
+
+      console.log('assigning cell state');
+      console.log(updates)
 
       Object.assign(cell, updates)
     },

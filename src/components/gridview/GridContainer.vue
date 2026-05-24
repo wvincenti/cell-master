@@ -55,11 +55,11 @@ function onTabSelect(idx) {
 </script>
 
 <template>
-    <div ref="tabContainerRef" id="grid-view-container" class="container-fluid h-100">
+    <div ref="tabContainerRef" id="grid-view-container" class="container-fluid">
         <div class="row h-100">
             <div class="col px-0 mytab-container bg-black"
                 style="min-height: 0 !important; overflow: hidden !important;">
-                <TabWrapper @cell-edited="onCellEdited" @tab-select="onTabSelect" :contHeight="height"
+                <TabWrapper @tab-select="onTabSelect" :contHeight="height"
                     :activeTab="activeTab" :sheetNames="activeSheetNames" :tableData="activeTable">
                 </TabWrapper>
             </div>

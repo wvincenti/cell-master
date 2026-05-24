@@ -53,12 +53,13 @@ function onCellEditComplete(e) {
     console.log(e)
     let { data, field } = e;
 
-    const [col, inputValue] = field.split('.');
+    const [col, valueField] = field.split('.');
 
     const editedCell = props.tableData[e.index][col];
     console.log(editedCell);
-    if (editedCell.cell_value != oldInputValue.value) {
-        emit('cell-edited', oldInputValue.value, e.index, col, props.activeTab, editedCell.sheet_id);
+    if (editedCell[valueField] != oldInputValue.value) {
+        spreadsheetStore.patchCellState(editedCell, {cell_value: oldInputValue.value})
+        //emit('cell-edited', oldInputValue.value, e.index, col, props.activeTab, editedCell.sheet_id);
     }
     // emit('cell-edited', oldInputValue.value, e.index, col, props.activeTab, editedCell.sheet_id);
     oldInputValue.value = '';
