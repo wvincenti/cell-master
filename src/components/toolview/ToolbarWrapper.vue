@@ -1,9 +1,14 @@
 <script setup>
 import { Toolbar, Button, IconField, InputIcon, InputText } from 'primevue';
 import { useSpreadsheetStore } from '@/stores/spreadsheet';
-import { onUpdated } from 'vue';
+import { onUpdated, computed } from 'vue';
+import { storeToRefs } from 'pinia';
 
-const spreadsheetStore = useSpreadsheetStore();
+const spreadsheetStore = useSpreadsheetStore()
+
+const { activeTableOrderedIds, activeTab } = storeToRefs(spreadsheetStore)
+
+const activeSheetId = computed(() => activeTableOrderedIds.value?.[activeTab.value])
 
 onUpdated(() => {
     console.log('updating ToolbarWrapper')
@@ -15,7 +20,7 @@ onUpdated(() => {
         <template #start>
             <Button @click="spreadsheetStore.addNewSheet(true)" icon="pi pi-plus" class="mr-2 " severity="secondary"
                 text />
-            <Button @click="spreadsheetStore.flushSheet()" icon="pi pi-save" class="mr-2 "
+            <Button @click="spreadsheetStore.flushSheet(activeSheetId)" icon="pi pi-save" class="mr-2 "
                 severity="secondary" text />
             <Button icon="pi pi-upload" class="" severity="secondary" text />
         </template>

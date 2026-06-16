@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed, onBeforeUpdate, onBeforeMount, nextTick, watch} from 'vue';
+import { onMounted, ref, computed, onBeforeUpdate, onBeforeMount, nextTick, watch } from 'vue';
 import { useSpreadsheetStore } from '@/stores/spreadsheet';
 import TabWrapper from './TabWrapper.vue';
 import { useElementSize } from '@vueuse/core';
@@ -26,15 +26,15 @@ const tableHeight = ref(0);
 
 watch(() => props.isTableResized, async (newValue) => {
     // Only calculate when the drag is finished (flag becomes true)
-    console.log('WHATCHING: '+newValue)
+    console.log('WHATCHING: ' + newValue)
     if (newValue) {
         await nextTick(); // Wait for splitpanes DOM adjustments
-        
+
         if (tabContainerRef.value) {
             tableHeight.value = tabContainerRef.value.offsetHeight;
         }
         // Tell the parent "I've successfully recalculated, you can turn off the flag now"
-        emit('table-resized'); 
+        emit('table-resized');
     }
 
     emit('table-resized')
@@ -50,7 +50,7 @@ onBeforeMount(async () => {
 });
 
 onMounted(() => {
-     console.log('CONTAINER MOUNTED');
+    console.log('CONTAINER MOUNTED');
     //const { height } = useElementSize(tabContainerRef);
     // console.log('HEIGHT: '+height.value)
     if (tabContainerRef.value) {
@@ -63,11 +63,6 @@ onBeforeUpdate(() => {
     // console.log('HEIGHT: '+height.value)
 });
 
-
-function onTabSelect(idx) {
-    spreadsheetStore.setActiveTab(idx);
-}
-
 </script>
 
 <template>
@@ -75,8 +70,8 @@ function onTabSelect(idx) {
         <div class="row h-100">
             <div class="col px-0 mytab-container bg-black"
                 style="min-height: 0 !important; overflow: hidden !important;">
-                <TabWrapper @tab-select="onTabSelect" :contHeight="tableHeight"
-                    :activeTab="activeTab" :sheetNames="activeSheetNames" :tableData="activeTable">
+                <TabWrapper :contHeight="tableHeight" :activeTab="activeTab" :sheetNames="activeSheetNames"
+                    :tableData="activeTable">
                 </TabWrapper>
             </div>
         </div>

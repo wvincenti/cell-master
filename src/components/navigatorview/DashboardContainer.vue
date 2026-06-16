@@ -12,14 +12,14 @@
             <div class="col p-1">
                 <!-- <TreeMenuWrapper :sheets="newNavigator"></TreeMenuWrapper> -->
                 <!-- <TableNavigator @add-sheet="addSheet" :navigator="navigator"></TableNavigator> -->
-                <SheetMenuWrapper></SheetMenuWrapper>
+                <!-- <SheetMenuWrapper ></SheetMenuWrapper> -->
                 <WorkAreaWrapper></WorkAreaWrapper>
 
             </div>
         </div>
         <div class="row h-50">
             <div class="col px-1">
-                <SheetListWrapper></SheetListWrapper>
+                <SheetListWrapper :isSheetLink="false"></SheetListWrapper>
             </div>
         </div>
     </div>

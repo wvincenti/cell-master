@@ -7,28 +7,26 @@ import ToolsContainer from '../toolview/ToolsContainer.vue';
 
 const isTableResized = ref(false);
 
-function handleResize(){
+function handleResize() {
   isTableResized.value = true;
   console.log('resized')
   console.log(isTableResized.value)
 }
 
-function handleResized(){
+function handleResized() {
   isTableResized.value = false;
-  console.log('table resized: '+ isTableResized)
+  console.log('table resized: ' + isTableResized)
 }
 </script>
 
 <template>
-<div class="pane-wrapper bg-secondary">
-    
-
-    <splitpanes class="main-layout default-them bg-secondary">
+  <div class="pane-wrapper bg-secondary">
+    <splitpanes class="main-layout default-theme bg-secondary">
       <pane size="30" max-size="30" class="bg-black">
         <DashboardContainer @add-sheet="() => { console.log('event recieved') }"></DashboardContainer>
       </pane>
       <pane>
-        <splitpanes horizontal class="default-theme main-layout"  @resized="handleResize">
+        <splitpanes horizontal class="default-theme main-layout" @resized="handleResize">
           <pane class="bg-secondary" size="70" max-size="100" min-size="0">
             <GridContainer @table-resized="handleResized" :isTableResized="isTableResized"></GridContainer>
           </pane>
