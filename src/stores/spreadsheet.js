@@ -58,9 +58,9 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
     activeTableId: (state) => state.activeTableOrderedIds[state.activeTab],
 
-    activeTable() {
-      return this.cellTables.get(this.activeTableId)
-    },
+    // activeTable() {
+    //   return this.cellTables.get(this.activeTableId)
+    // },
 
     storedSheets() {
       return this.sheetsList.filter((sheet) => !sheet.isNew)
@@ -129,11 +129,11 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
         this.cellTables.delete(sheetId)
 
-        this.sheetOrderedIds.filter((id) => id != sheetId)
-        this.loadedSheetOrderedIds.filter((id) => id != sheetId)
+        this.sheetOrderedIds = this.sheetOrderedIds.filter((id) => id != sheetId)
+        this.loadedSheetOrderedIds = this.loadedSheetOrderedIds.filter((id) => id != sheetId)
 
         const tabIdx = this.activeSheetNames.indexOf(sheetId);
-        this.activeTableOrderedIds.filter((id) => id != sheetId)
+        this.activeTableOrderedIds = this.activeTableOrderedIds.filter((id) => id != sheetId)
 
         if (tabIdx == 0) {
           this.activeTab = null
@@ -447,11 +447,12 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       }
 
       cells.forEach((cell) => {
-        const row = cell.row_index,
-          col = cell.col_index
+        const row = cell?.row_index,
+          col = cell?.col_index
 
-        cellTable[row][col] = cell
-      })
+        if (row && col) cellTable[row][col] = cell;
+        
+      }) 
 
       //this.cellTables.set(sheetId, cellTable)
       return cellTable

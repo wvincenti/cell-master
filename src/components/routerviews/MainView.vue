@@ -26,6 +26,8 @@ function handleResized() {
         <DashboardContainer @add-sheet="() => { console.log('event recieved') }"></DashboardContainer>
       </pane>
       <pane>
+        <!-- <GridContainer @table-resized="handleResized" :isTableResized="isTableResized"></GridContainer>
+        <ToolsContainer></ToolsContainer> -->
         <splitpanes horizontal class="default-theme main-layout" @resized="handleResize">
           <pane class="bg-secondary" size="70" max-size="100" min-size="0">
             <GridContainer @table-resized="handleResized" :isTableResized="isTableResized"></GridContainer>

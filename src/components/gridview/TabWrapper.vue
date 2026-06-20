@@ -5,11 +5,12 @@ import draggable from 'vuedraggable';
 import { getColLabel } from '@/stores/spreadsheet';
 import { useSpreadsheetStore } from '@/stores/spreadsheet';
 import { storeToRefs } from 'pinia';
+import CellTable from './CellTable.vue';
 
 const props = defineProps({
-    activeTab: Number,
-    sheetNames: Array,
-    tableData: Array,
+    // activeTab: Number,
+    // sheetNames: Array,
+    // tableData: Array,
     contHeight: Number,
     activeSheetId: null,
 
@@ -17,14 +18,18 @@ const props = defineProps({
 
 const spreadsheetStore = useSpreadsheetStore();
 
-const { activeTableOrderedIds, activeTab } = storeToRefs(spreadsheetStore)
+const { activeTableOrderedIds, activeTableId,  activeSheetNames : sheetNames, activeTab } = storeToRefs(spreadsheetStore)
+
+
+// const  tableData = computed(() => spreadsheetStore.cellTables?.get(activeTableId.value)) //cellTables.get(activeTableOrderedIds)
+
 
 const tabListRef = ref(null);
 const tableHeight = computed(() => props.contHeight - tabListRef.value?.offsetHeight);
 
-const rowLables = computed(() => props.tableData?.map((row, i) => {
-    return { index: i, label: getColLabel(i + 1) };
-}))
+// const rowLables = computed(() => props.tableData?.map((row, i) => {
+//     return { index: i, label: getColLabel(i + 1) };
+// }))
 
 const oldInputValue = ref(null);
 
@@ -33,20 +38,20 @@ const onRootMounted = (el) => {
     console.log(tabListRef.value);
 };
 
-function onCellEditComplete(e) {
-    console.log(e)
-    let { data, field } = e;
+// function onCellEditComplete(e) {
+//     console.log(e)
+//     let { data, field } = e;
 
-    const [col, valueField] = field.split('.');
+//     const [col, valueField] = field.split('.');
 
-    const editedCell = props.tableData[e.index][col];
-    console.log(editedCell);
+//     const editedCell = props.tableData[e.index][col];
+//     console.log(editedCell);
 
-    if (editedCell[valueField] != oldInputValue.value)
-        spreadsheetStore.patchCellState(editedCell, { cell_value: oldInputValue.value });
+//     if (editedCell[valueField] != oldInputValue.value)
+//         spreadsheetStore.patchCellState(editedCell, { cell_value: oldInputValue.value });
 
-    oldInputValue.value = '';
-}
+//     oldInputValue.value = '';
+// }
 
 function onCellInit(e) {
     let { data, field } = e;
@@ -88,11 +93,16 @@ function onRowReorder(event) {
     console.log(event)
 }
 
+
 </script>
 
 <template>
     <Tabs :pt="{ root: { class: 'h-100' } }" :value="activeTab" scrollable>
-        <TabList asChild :pt="{ root: { onVnodeMounted: (vnode) => onRootMounted(vnode.el) } }">
+        <TabList asChild 
+        :pt="{ root: { onVnodeMounted: (vnode) => onRootMounted(vnode.el) } 
+    }"
+    ref="tabListRef"
+    >
             <draggable @change="onElementDragged" tag="div" v-model="activeTableOrderedIds" item-key="id">
                 <template #item="{ element, index }">
                     <Tab :pt="{ root: { class: 'py-2' } }" :value="index" @click="spreadsheetStore.setActiveTab(index)">
@@ -103,9 +113,8 @@ function onRowReorder(event) {
         </TabList>
         <TabPanels :pt="{ root: { class: 'p-0' } }">
             <TabPanel :value="activeTab" :pt="{ root: { class: 'h-100' } }">
-                <DataTable 
+                <!-- <DataTable 
                     resizableColumns columnResizeMode="fit"
-                    @row-reorder="spreadsheetStore.patchCellTableState($event)"
                     v-model:expandedRows="expandedRows" dataKey="0.row_index" @cell-edit-init="onCellInit"
                     :reorderableColumns="true"
                     @cell-edit-complete="onCellEditComplete" edit-mode="cell" :value="tableData" size="small"
@@ -117,13 +126,10 @@ function onRowReorder(event) {
                             })
                         },
                     }">
-                    <!-- <Column rowReorder headerStyle="width: 3rem" :reorderableColumn="false" /> -->
+           
                     <Column expander frozen>
-
-
-
                     </Column>
-                    <Column frozen rowReorder></Column>
+            
                     <Column frozen>
                         <template #body="rowLables">
                             <span>{{ rowLables.index }}</span>
@@ -174,13 +180,12 @@ function onRowReorder(event) {
                             </div>
                         </div>
                     </template>
-
-
-
-                </DataTable>
+                </DataTable> -->
+                <CellTable 
+                :table-height="tableHeight" :key="'table-'+activeTableOrderedIds[activeTab]" :comp-id="activeTableOrderedIds[activeTab]"></CellTable>
             </TabPanel>
         </TabPanels>
-    </Tabs>
+    </Tabs>a
 </template>
 
 <style scoped></style>

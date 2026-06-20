@@ -70,8 +70,10 @@ onBeforeUpdate(() => {
         <div class="row h-100">
             <div class="col px-0 mytab-container bg-black"
                 style="min-height: 0 !important; overflow: hidden !important;">
-                <TabWrapper :contHeight="tableHeight" :activeTab="activeTab" :sheetNames="activeSheetNames"
-                    :tableData="activeTable">
+                <TabWrapper :contHeight="tableHeight" 
+
+            
+                    >
                 </TabWrapper>
             </div>
         </div>
