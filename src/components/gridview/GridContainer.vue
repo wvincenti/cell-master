@@ -12,7 +12,7 @@ const props = defineProps({
 
 const spreadsheetStore = useSpreadsheetStore();
 
-const emit = defineEmits(['table-resized'])
+// const emit = defineEmits(['table-resized'])
 
 console.log('GRID HEIGHT: ' + props.containerHeight);
 
@@ -23,6 +23,8 @@ console.log('TABLE DATA ***')
 
 const tabContainerRef = ref(null);
 const tableHeight = ref(0);
+
+
 
 watch(() => props.isTableResized, async (newValue) => {
     // Only calculate when the drag is finished (flag becomes true)
@@ -49,13 +51,17 @@ onBeforeMount(async () => {
     if (spreadsheetStore.activeTableOrderedIds == 0) spreadsheetStore.addNewSheet(true);
 });
 
-onMounted(() => {
+onMounted(async () => {
+    await nextTick()
     console.log('CONTAINER MOUNTED');
     //const { height } = useElementSize(tabContainerRef);
     // console.log('HEIGHT: '+height.value)
-    if (tabContainerRef.value) {
-        tableHeight.value = tabContainerRef.value.getBoundingClientRect().height;
-    }
+    requestAnimationFrame(() => {
+        if (tabContainerRef.value) {
+            tableHeight.value = tabContainerRef.value.getBoundingClientRect().height;
+        }
+    })
+
 })
 
 onBeforeUpdate(() => {
@@ -70,10 +76,7 @@ onBeforeUpdate(() => {
         <div class="row h-100">
             <div class="col px-0 mytab-container bg-black"
                 style="min-height: 0 !important; overflow: hidden !important;">
-                <TabWrapper :contHeight="tableHeight" 
-
-            
-                    >
+                <TabWrapper :isTableResized="isTableResized">
                 </TabWrapper>
             </div>
         </div>

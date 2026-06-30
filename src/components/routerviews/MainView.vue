@@ -4,18 +4,18 @@ import { Splitpanes, Pane } from 'splitpanes';
 import GridContainer from '../gridview/GridContainer.vue';
 import DashboardContainer from '../navigatorview/DashboardContainer.vue';
 import ToolsContainer from '../toolview/ToolsContainer.vue';
+import { useSpreadsheetStore } from '@/stores/spreadsheet.js';
+import { storeToRefs } from 'pinia';
 
-const isTableResized = ref(false);
+const spreadsheetStore = useSpreadsheetStore()
 
-function handleResize() {
-  isTableResized.value = true;
-  console.log('resized')
-  console.log(isTableResized.value)
-}
+function handleResized(event) {
+  
+  const height = event.prevPane.el.clientHeight
+  console.log(height)
 
-function handleResized() {
-  isTableResized.value = false;
-  console.log('table resized: ' + isTableResized)
+  spreadsheetStore.setMainTableHeight(height)
+  
 }
 </script>
 
@@ -28,9 +28,9 @@ function handleResized() {
       <pane>
         <!-- <GridContainer @table-resized="handleResized" :isTableResized="isTableResized"></GridContainer>
         <ToolsContainer></ToolsContainer> -->
-        <splitpanes horizontal class="default-theme main-layout" @resized="handleResize">
+        <splitpanes horizontal class="default-theme main-layout" @resized="handleResized">
           <pane class="bg-secondary" size="70" max-size="100" min-size="0">
-            <GridContainer @table-resized="handleResized" :isTableResized="isTableResized"></GridContainer>
+            <GridContainer></GridContainer>
           </pane>
           <pane size="30">
             <ToolsContainer></ToolsContainer>
