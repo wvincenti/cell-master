@@ -44,7 +44,8 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
     isMainTableResized: false,
 
-    mainTableHeight: 500
+    mainTableWidth: 600,
+    mainTableHeight: 100
   }),
   //#endregion
 

@@ -1,12 +1,24 @@
 <template>
-    <DataTable @cell-edit-init="onCellInit" @cell-edit-complete="onCellEditComplete" edit-mode="cell" :value="tableGrid"
-        v-model:expandedRows="expandedRows" :dataKey="getRowKey" size="small" tableStyle="min-width: 50rem"
-        showGridlines scrollable :scrollHeight="`${tableHeight}px`" :pt="{
+    <DataTable 
+        @cell-edit-init="onCellInit" 
+        @cell-edit-complete="onCellEditComplete" 
+        edit-mode="cell" 
+        :value="tableGrid"
+        :dataKey="getRowKey"
+        v-model:expandedRows="expandedRows" 
+        size="small" 
+        tableStyle="min-width: 50rem"
+        showGridlines scrollable 
+        :scrollHeight="`${tableHeight}px`" 
+        :pt="{
             table: { style: 'min-width: 50rem' },
             column: {
                 bodycell: ({ state }) => ({
                     class: [{ 'p-0': state['d_editing'] }]
                 })
+            },
+            rowExpansionCell: {
+               style: `width: ${500}px`  
             }
         }">
         <!-- <Column rowReorder headerStyle="width: 3rem" :reorderableColumn="false" /> -->
@@ -27,9 +39,8 @@
 
         <template #expansion="slotProps">
 
-            <div class="container-fluid" :class="{bounded : tableWidth}">
+            <div class="container-fluid ms-0" style="width: 500px; position: sticky; left: 0; display: block;">
                 <div class="row">
-  
                     <div class="col">
                         <select v-model="selectedLink">
                             <template v-for="linkedId in spreadsheetStore.sheets.get(activeTableId)?.linked_sheet_ids">
@@ -40,9 +51,12 @@
                         </select>
                     </div>
                 </div>
-                <div v-if="selectedLink" class="row" style="max-width: calc(100vw - 100px); position: relative;">
+                <div v-if="selectedLink" class="row" >
                     <div class="col">
-                        <CellTable :table-data="slotProps.data" :table-height="200" :table-width="500"
+                        <CellTable 
+                        :table-data="slotProps.data" 
+                        :table-height="200" 
+                        :table-width="500"
                         :active-table-id="selectedLink"
                             :row-number="5" :col-number="5" :key="`table-${selectedLink}`"></CellTable>
                     </div>
@@ -76,8 +90,8 @@ const props = defineProps({
     rowNumber: { type: Number, default: 20 },
     colNumber: { type: Number, default: 11 },
 
-    tableWidth: null
 });
+
 
 
 defineOptions({
@@ -89,7 +103,9 @@ onUpdated(() => {
     // console.log(rowLables.value);
 })
 
+
 const spreadsheetStore = useSpreadsheetStore();
+
 
 
 const tableGrid = reactive(createTableGrid(props.rowNumber, props.colNumber))

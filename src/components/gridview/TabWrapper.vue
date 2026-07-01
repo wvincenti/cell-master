@@ -25,7 +25,7 @@ const tabPanelRef = ref(null)
 //const tableHeight = ref(tabPanelRef.value?.getBoundingClientRect()?.height - tabListRef.value?.getBoundingClientRect()?.height);
 const tableHeight = computed(() => {
     const h = mainTableHeight.value - Math.round(tabListRef.value?.getBoundingClientRect()?.height)
-    console.log(tabPanelRef.value?.getBoundingClientRect()?.height)
+    console.log(tabListRef.value?.getBoundingClientRect()?.height)
     console.log('computing table height: ' + h)
     return h
 })
@@ -133,6 +133,7 @@ onMounted(async () => {
     requestAnimationFrame(() => {
         if (tabPanelRef.value) {
             spreadsheetStore.setMainTableHeight(tabPanelRef.value?.getBoundingClientRect()?.height);
+            spreadsheetStore.mainTableWidth = Math.round(tabPanelRef.value?.getBoundingClientRect()?.width)
         }
     })
 })
