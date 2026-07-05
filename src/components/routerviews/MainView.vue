@@ -11,7 +11,7 @@ const spreadsheetStore = useSpreadsheetStore()
 
 function handleResized(event) {
   
-  const height = event.prevPane.el.clientHeight
+  const height = event.prevPane.el.clientHeight - spreadsheetStore.tabListHeight
   console.log(height)
 
   spreadsheetStore.setMainTableHeight(height)

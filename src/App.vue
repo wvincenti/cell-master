@@ -2,7 +2,6 @@
   <div class="h-100 d-flex flex-column bg-secondary">
     <HeaderContainer></HeaderContainer>
     <RouterView />
-
     <footer ref="footerRef" class="text-center align-middle bg-dark text-light"
       style="font-size: xx-small; height: 1rem;">
       by wvvincenti

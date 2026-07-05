@@ -1,20 +1,8 @@
 <template>
     <div class="container-fluid h-100">
-        <!-- <div class="row">
-            <div class="col p-1">
-                <VueTreeDnd @add-sheet="() => { console.log('event recieved') }" @move="moveHandler"
-                    @setExpanded="handleSetExpanded" @rename="(arg1, arg2, arg3) => console.log('renaming')"
-                    :component="TreeMenuRenderer" v-model="navigator">
-                </VueTreeDnd>
-            </div>
-        </div> -->
         <div class="row h-50">
             <div class="col p-1">
-                <!-- <TreeMenuWrapper :sheets="newNavigator"></TreeMenuWrapper> -->
-                <!-- <TableNavigator @add-sheet="addSheet" :navigator="navigator"></TableNavigator> -->
-                <!-- <SheetMenuWrapper ></SheetMenuWrapper> -->
                 <WorkAreaWrapper></WorkAreaWrapper>
-
             </div>
         </div>
         <div class="row h-50">
@@ -28,12 +16,7 @@
 
 <script setup>
 import { useSpreadsheetStore, getColLabel } from '@/stores/spreadsheet';
-import TableNavigator from './TableNavigator.vue';
 import { onMounted, computed, ref, watch, provide, onUpdated } from 'vue';
-import TreeMenuRenderer from './TreeMenuRenderer.vue';
-import VueTreeDnd from 'vue-tree-dnd'
-import TreeMenuWrapper from './TreeMenuWrapper.vue';
-import SheetMenuWrapper from './SheetMenuWrapper.vue';
 import SheetListWrapper from './SheetListWrapper.vue';
 import WorkAreaWrapper from './WorkAreaWrapper.vue';
 import router from '@/router';
@@ -44,7 +27,6 @@ provide('addSheet', spreadsheetStore.addSheet);
 //provide('deleteSheet', deleteSheet);
 provide('updateName', spreadsheetStore.updateName);
 
-const expandedKeys = ref({});
 
 const navigator = ref([]);
 

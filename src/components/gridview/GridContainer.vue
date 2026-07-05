@@ -1,20 +1,14 @@
 <script setup>
-import { onMounted, ref, computed, onBeforeUpdate, onBeforeMount, nextTick, watch } from 'vue';
+import { onMounted, ref, computed, onBeforeUpdate, onBeforeMount, onBeforeUnmount, nextTick, watch } from 'vue';
 import { useSpreadsheetStore } from '@/stores/spreadsheet';
 import TabWrapper from './TabWrapper.vue';
-import { useElementSize } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
-
-const props = defineProps({
-    containerHeight: 0,
-    isTableResized: false,//{ type: Number, isTableResize: Boolean }
-})
 
 const spreadsheetStore = useSpreadsheetStore();
 
 // const emit = defineEmits(['table-resized'])
 
-console.log('GRID HEIGHT: ' + props.containerHeight);
+
 
 const { activeSheetNames, activeTable, activeTab } = storeToRefs(spreadsheetStore);
 
@@ -24,26 +18,6 @@ console.log('TABLE DATA ***')
 const tabContainerRef = ref(null);
 const tableHeight = ref(0);
 
-
-
-watch(() => props.isTableResized, async (newValue) => {
-    // Only calculate when the drag is finished (flag becomes true)
-    console.log('WHATCHING: ' + newValue)
-    if (newValue) {
-        await nextTick(); // Wait for splitpanes DOM adjustments
-
-        if (tabContainerRef.value) {
-            tableHeight.value = tabContainerRef.value.offsetHeight;
-        }
-        // Tell the parent "I've successfully recalculated, you can turn off the flag now"
-        emit('table-resized');
-    }
-
-    emit('table-resized')
-});
-
-// console.log('HEIGHT: '+height.value)
-
 onBeforeMount(async () => {
     // await spreadsheetStore.fetchLatestSheetId();
     console.log('**** sheets ***');
@@ -51,23 +25,33 @@ onBeforeMount(async () => {
     if (spreadsheetStore.activeTableOrderedIds == 0) spreadsheetStore.addNewSheet(true);
 });
 
-onMounted(async () => {
-    await nextTick()
-    console.log('CONTAINER MOUNTED');
-    //const { height } = useElementSize(tabContainerRef);
-    // console.log('HEIGHT: '+height.value)
-    requestAnimationFrame(() => {
-        if (tabContainerRef.value) {
-            tableHeight.value = tabContainerRef.value.getBoundingClientRect().height;
-        }
-    })
+// onMounted(async () => {
+//     window.addEventListener('resize', handleWindowResize)
 
-})
+//     console.log('MOUNTING GRID CONTAINER')
 
-onBeforeUpdate(() => {
-    console.log('UPDATING GRID CONTAINER');
-    // console.log('HEIGHT: '+height.value)
-});
+// })
+
+// onBeforeUnmount(() => {
+//     window.removeEventListener('resize', handleWindowResize)
+
+//         console.log('UN-MOUNTING GRID CONTAINER')
+// })
+
+// function handleWindowResize(e) {
+//     console.log('reszing window:')
+//     const h = tabContainerRef.value?.clientHeight - spreadsheetStore.tabListHeight
+//     const w = tabContainerRef.value?.clientWidth
+//     console.log('h: '+h)
+//     console.log('w: '+w)
+//     spreadsheetStore.setMainTableHeight(h)
+//     spreadsheetStore.setMainTableWidth(w)
+// }
+
+// onBeforeUpdate(() => {
+//     console.log('UPDATING GRID CONTAINER');
+//     // console.log('HEIGHT: '+height.value)
+// });
 
 </script>
 
@@ -76,7 +60,7 @@ onBeforeUpdate(() => {
         <div class="row h-100">
             <div class="col px-0 mytab-container bg-black"
                 style="min-height: 0 !important; overflow: hidden !important;">
-                <TabWrapper :isTableResized="isTableResized">
+                <TabWrapper>
                 </TabWrapper>
             </div>
         </div>

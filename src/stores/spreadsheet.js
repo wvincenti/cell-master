@@ -42,10 +42,10 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
     loading: false,
 
-    isMainTableResized: false,
-
     mainTableWidth: 600,
-    mainTableHeight: 100
+    mainTableHeight: 300,
+    tabListHeight: 100
+
   }),
   //#endregion
 
@@ -72,23 +72,6 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
     storedSheets() {
       return this.sheetsList.filter((sheet) => !sheet.isNew)
     },
-
-    // sheetsMenu() {
-    //   return [
-    //     {
-    //       label: 'Sheets',
-    //       icon: 'pi pi-table',
-    //       items: this.sheetsList.map((sheet) => {
-    //         return {
-    //           label: sheet.name,
-    //           icon: 'pi pi-plus',
-    //           sheet_id: sheet.id,
-    //           key: `sheet-item-${sheet.id}`,
-    //         }
-    //       }),
-    //     },
-    //   ]
-    // },
 
     /* 
       CONSIDER REMOVING THE DIRTY COLS TRACKING
@@ -120,18 +103,15 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
   actions: {
 
-    setIsMainTableResized(isResized) {
-      this.isMainTableResized = isResized
-
-      console.log('resized set')
-      console.log(this.isMainTableResized)
-    },
-
     setMainTableHeight(height) {
       this.mainTableHeight = height
     },
 
-    //#region REMOVE SHEET
+    setMainTableWidth(width) {
+      this.mainTableWidth = width
+    },
+
+    //#region DEL SHEET
     async deleteSheetFromDB(sheetId) {
       console.log('SENDING DELETE REQUEST')
       const response = await axios.post(`${urlbase}/api/deleteSheet`, { sheet_id: sheetId })
@@ -304,7 +284,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
     // },
     reorderRows(tablePointer, updates = []) {},
 
-    //#region STATE PATCHING
+    //#region PATCHING
 
     patchSheetState(sheetPointer, updates = {}) {
       const oldId = sheetPointer.id

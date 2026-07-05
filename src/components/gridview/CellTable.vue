@@ -1,16 +1,10 @@
 <template>
-    <DataTable 
-        @cell-edit-init="onCellInit" 
-        @cell-edit-complete="onCellEditComplete" 
-        edit-mode="cell" 
-        :value="tableGrid"
-        :dataKey="getRowKey"
-        v-model:expandedRows="expandedRows" 
-        size="small" 
-        tableStyle="min-width: 50rem"
-        showGridlines scrollable 
-        :scrollHeight="`${tableHeight}px`" 
-        :pt="{
+    <DataTable @cell-edit-init="onCellInit" @cell-edit-complete="onCellEditComplete"
+    
+        v-memo="[colNumber, rowNumber, tableHeight]"
+        edit-mode="cell" :value="tableGrid"
+        :dataKey="getRowKey" v-model:expandedRows="expandedRows" size="small" tableStyle="min-width: 50rem"
+        showGridlines scrollable :scrollHeight="`${tableHeight}px`" :pt="{
             table: { style: 'min-width: 50rem' },
             column: {
                 bodycell: ({ state }) => ({
@@ -18,7 +12,7 @@
                 })
             },
             rowExpansionCell: {
-               style: `width: ${500}px`  
+                style: `width: ${500}px`
             }
         }">
         <!-- <Column rowReorder headerStyle="width: 3rem" :reorderableColumn="false" /> -->
@@ -30,7 +24,7 @@
                 <span>{{ slotProps.index }}</span>
             </template>
         </Column>
-        <Column v-for="(cols, i) in tableGrid?.[0]" :header="`${rowLables[i]?.label}` ?? getColLabel(rowLables.index)"
+        <Column v-for=" i in colNumber" :key="'col-'+i" :header="null"
             :field="`${i}.cell_value`" style="min-width: 10rem;">
             <template #editor="{ data, field }">
                 <InputText v-model="oldInputValue" class="h-100 w-100 border-0 rounded-0"></InputText>
@@ -39,11 +33,12 @@
 
         <template #expansion="slotProps">
 
-            <div class="container-fluid ms-0" style="width: 500px; position: sticky; left: 0; display: block;">
+            <div class="container-fluid ms-0 pe-4"
+                :style="`width: ${tableWidth}px; position: sticky; left: 0; display: block;`">
                 <div class="row">
                     <div class="col">
                         <select v-model="selectedLink">
-                            <template v-for="linkedId in spreadsheetStore.sheets.get(activeTableId)?.linked_sheet_ids">
+                            <template v-for="linkedId in spreadsheetStore.sheets.get(tableId)?.linked_sheet_ids">
                                 <option :value="linkedId">
                                     {{ spreadsheetStore.sheets.get(linkedId)?.name || "not found" }}
                                 </option>
@@ -51,13 +46,9 @@
                         </select>
                     </div>
                 </div>
-                <div v-if="selectedLink" class="row" >
+                <div v-if="selectedLink" class="row">
                     <div class="col">
-                        <CellTable 
-                        :table-data="slotProps.data" 
-                        :table-height="200" 
-                        :table-width="500"
-                        :active-table-id="selectedLink"
+                        <CellTable :table-height="200" :table-id="selectedLink"
                             :row-number="5" :col-number="5" :key="`table-${selectedLink}`"></CellTable>
                     </div>
                 </div>
@@ -67,11 +58,9 @@
     </DataTable>
 </template>
 <style scoped>
-
 .bounded {
     max-width: 200px !important;
 }
-
 </style>
 <script setup>
 import { ref, computed, onBeforeMount, onUpdated, onMounted, watch, reactive, shallowReactive } from 'vue';
@@ -85,7 +74,8 @@ import { storeToRefs } from 'pinia';
 const props = defineProps({
     // tableData: Array,
     tableHeight: Number,
-    activeTableId: [Number, String],
+    tableWidth: Number,
+    tableId: [Number, String],
     // compId: { type: [String, Number] },
     rowNumber: { type: Number, default: 20 },
     colNumber: { type: Number, default: 11 },
@@ -106,8 +96,6 @@ onUpdated(() => {
 
 const spreadsheetStore = useSpreadsheetStore();
 
-
-
 const tableGrid = reactive(createTableGrid(props.rowNumber, props.colNumber))
 
 function createTableGrid(rowNum, colNum) {
@@ -127,9 +115,9 @@ function createTableGrid(rowNum, colNum) {
                 // old_value : '',
                 cell_value: '',
                 row_index: i,
-                // col_index : j,
+                col_index: j,
                 // isDirty : false,
-                // sheet_id : null,
+                sheet_id: null,
                 // data_type : 'string',
             }
         }
@@ -149,29 +137,65 @@ const getRowKey = (data) => {
 
 
 
-watch(() => props.activeTableId, (newTableId) => {
+watch(() => props.tableId, (newTableId) => {
     console.log(tableGrid)
-    spreadsheetStore.cellTables.get(newTableId)?.forEach((row, row_index) => {
+
+    const tableModel = spreadsheetStore.cellTables.get(newTableId)
+
+    tableGrid.forEach((row, i) => {
 
         for (const [key, value] of Object.entries(row)) {
-            //Object.assign(tableGrid[row_index][key], row[key]?.cell_value)
-            // console.log(value)
-            const gridRow = tableGrid?.[value?.row_index]
 
+            const cellModel = tableModel?.[i]?.[key]
+            
+            if (cellModel) {
+                value.cell_value = cellModel.cell_value
+                // value.row_index = cellModel.row_index,
+      
+                // value.col_index = cellModel.col_index
+            } else {
+                value.cell_value = ''
+                // value.row_index = cellModel.row_index,
+                // value.sheet_id = cellModel.sheet_id,
+                // value.col_index = cellModel.col_index
+            }
 
-            if (!gridRow) tableGrid[value?.row_index] = {}
-            const gridCol = gridRow?.[key]
-            if (!gridCol) tableGrid[value.row_index][key] = { cell_value: '', row_index: value?.row_index }
-            tableGrid[value?.row_index][key].cell_value = row[key]?.cell_value
+            value.sheet_id = newTableId
+
         }
     })
+
+    // spreadsheetStore.cellTables.get(newTableId)?.forEach((row) => {
+
+    //     for (const [key, value] of Object.entries(row)) {
+    //         //Object.assign(tableGrid[row_index][key], row[key]?.cell_value)
+    //         // console.log(value)
+    //         let gridRow = tableGrid?.[value?.row_index]
+
+    //         if (!gridRow) tableGrid[value?.row_index] = {};
+
+    //         let gridCell = gridRow?.[key]
+
+    //         if (!gridCell) tableGrid[value.row_index][key] = {};
+
+    //         Object.assign(
+    //             tableGrid[value?.row_index][key], 
+    //             { 
+    //                 cell_value: row[key]?.cell_value, 
+    //                 row_index: value?.row_index, 
+    //                 sheet_id: value?.sheet_id, 
+    //                 col_index: value?.col_index 
+    //             }
+    //         )
+    //     }
+    // })
 }, { immediate: true })
 
 
-const rowLables = computed(() => tableGrid.map((row, i) => {
-    console.log('computing row labels')
-    return { index: i, label: getColLabel(i + 1) };
-}))
+// const rowLables = computed(() => tableGrid.map((row, i) => {
+//     console.log('computing row labels')
+//     return { index: i, label: getColLabel(i + 1) };
+// }))
 
 const oldInputValue = ref(null);
 
@@ -186,9 +210,11 @@ function onCellEditComplete(e) {
     console.log(editedCell);
 
     console.log(editedCell[valueField] != oldInputValue.value)
+
     if (editedCell[valueField] != oldInputValue.value)
         spreadsheetStore.patchCellState(editedCell, { cell_value: oldInputValue.value });
 
+    editedCell[valueField] = oldInputValue.value
     oldInputValue.value = '';
 
 }
@@ -197,8 +223,8 @@ function onCellEditComplete(e) {
 function onCellInit(e) {
     let { data, field } = e;
     console.log(e)
-    let [col, value] = field.split('.');
-    oldInputValue.value = data[col]?.value?.['cell_value'];
+    let [col_index, valueField] = field.split('.');
+    oldInputValue.value = data[col_index]?.[valueField];
 }
 
 const isRowExpanded = ref(false)
