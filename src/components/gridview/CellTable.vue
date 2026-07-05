@@ -1,16 +1,14 @@
 <template>
     <DataTable @cell-edit-init="onCellInit" @cell-edit-complete="onCellEditComplete"
-    
-        v-memo="[colNumber, rowNumber, tableHeight]"
-        edit-mode="cell" :value="tableGrid"
-        :dataKey="getRowKey" v-model:expandedRows="expandedRows" size="small" tableStyle="min-width: 50rem"
-        showGridlines scrollable :scrollHeight="`${tableHeight}px`" :pt="{
+        v-memo="[colNumber, rowNumber, tableHeight]" edit-mode="cell" :value="tableGrid" :dataKey="getRowKey"
+        v-model:expandedRows="expandedRows" size="small" tableStyle="min-width: 50rem" showGridlines scrollable
+        :scrollHeight="`${tableHeight}px`" :pt="{
             table: { style: 'min-width: 50rem' },
-            column: {
-                bodycell: ({ state }) => ({
-                    class: [{ 'p-0': state['d_editing'] }]
-                })
-            },
+                           column: {
+                    bodycell: ({ state }) => ({
+                        class: [{ 'p-0': state['d_editing'] }]
+                    })
+                },
             rowExpansionCell: {
                 style: `width: ${500}px`
             }
@@ -24,8 +22,8 @@
                 <span>{{ slotProps.index }}</span>
             </template>
         </Column>
-        <Column v-for=" i in colNumber" :key="'col-'+i" :header="null"
-            :field="`${i}.cell_value`" style="min-width: 10rem;">
+        <Column v-once v-for="i in colNumber" :key="'col-' + i" :header="null" :field="`${i - 1}.cell_value`"
+            style="min-width: 10rem;">
             <template #editor="{ data, field }">
                 <InputText v-model="oldInputValue" class="h-100 w-100 border-0 rounded-0"></InputText>
             </template>
@@ -33,7 +31,7 @@
 
         <template #expansion="slotProps">
 
-            <div class="container-fluid ms-0 pe-4"
+            <div v-if="expandedRows[getRowKey(slotProps.data)]" class="container-fluid ms-0 pe-4"
                 :style="`width: ${tableWidth}px; position: sticky; left: 0; display: block;`">
                 <div class="row">
                     <div class="col">
@@ -48,7 +46,7 @@
                 </div>
                 <div v-if="selectedLink" class="row">
                     <div class="col">
-                        <CellTable :table-height="200" :table-id="selectedLink"
+                        <CellTable :table-height="200" :table-width="tableWidth" :table-id="selectedLink"
                             :row-number="5" :col-number="5" :key="`table-${selectedLink}`"></CellTable>
                     </div>
                 </div>
@@ -57,14 +55,10 @@
         </template>
     </DataTable>
 </template>
-<style scoped>
-.bounded {
-    max-width: 200px !important;
-}
-</style>
+<style scoped></style>
 <script setup>
 import { ref, computed, onBeforeMount, onUpdated, onMounted, watch, reactive, shallowReactive } from 'vue';
-import { Tabs, Tab, TabList, TabPanel, DataTable, Column, InputText, Button } from 'primevue';
+import { Tabs, Tab, TabList, TabPanel, DataTable, Column, InputText, Button, Row } from 'primevue';
 import draggable from 'vuedraggable';
 import { getColLabel } from '@/stores/spreadsheet';
 import { useSpreadsheetStore } from '@/stores/spreadsheet';
@@ -142,16 +136,21 @@ watch(() => props.tableId, (newTableId) => {
 
     const tableModel = spreadsheetStore.cellTables.get(newTableId)
 
+    console.log('TABLE MODEL ****')
+    console.log(tableModel)
+
     tableGrid.forEach((row, i) => {
 
         for (const [key, value] of Object.entries(row)) {
 
             const cellModel = tableModel?.[i]?.[key]
-            
+
+            console.log(cellModel)
+
             if (cellModel) {
                 value.cell_value = cellModel.cell_value
                 // value.row_index = cellModel.row_index,
-      
+
                 // value.col_index = cellModel.col_index
             } else {
                 value.cell_value = ''
@@ -213,7 +212,6 @@ function onCellEditComplete(e) {
 
     if (editedCell[valueField] != oldInputValue.value)
         spreadsheetStore.patchCellState(editedCell, { cell_value: oldInputValue.value });
-
     editedCell[valueField] = oldInputValue.value
     oldInputValue.value = '';
 

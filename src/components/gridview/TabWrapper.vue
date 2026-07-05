@@ -57,9 +57,12 @@ onMounted(async () => {
     // console.log('HEIGHT: '+height.value)
     requestAnimationFrame(() => {
         if (tabPanelRef.value) {
-            spreadsheetStore.setMainTableHeight(tabPanelRef.value?.clientHeight)
-            spreadsheetStore.setMainTableWidth(tabPanelRef.value?.clientWidth)
+
             spreadsheetStore.tabListHeight = tabListRef.value?.clientHeight
+
+            spreadsheetStore.setMainTableHeight(tabPanelRef.value?.clientHeight - spreadsheetStore?.tabListHeight)
+            spreadsheetStore.setMainTableWidth(tabPanelRef.value?.clientWidth)
+           
         }
     })
 })
@@ -120,7 +123,7 @@ onMounted(async () => {
             </template>
         </draggable>
     </div> -->
-    <div ref="tabPanelRef" class="h-100 w-100">
+    <div ref="tabPanelRef" class="h-100 w-100 tpr">
         <CellTable 
             :table-id="activeTableId" 
             :table-height="mainTableHeight" 

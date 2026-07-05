@@ -355,6 +355,12 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
       const { sheet_id, row_index, col_index } = cellPointer
 
+      const table = this.cellTables.get(sheet_id)
+
+      if (!table[row_index]) table[row_index] = {}
+      
+      if (!table[row_index][col_index]) table[row_index][col_index] = {}
+
       const cell = this.cellTables.get(sheet_id)?.[row_index]?.[`${col_index}`]
 
       console.log('STORE CELL')
@@ -402,7 +408,10 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
         return
       }
 
-      return tableRows.flatMap((row) => {
+      // return tableRows.flatMap((row) => {
+      //   return Object.values(row).filter((cell) => cell.isDirty)
+      // })
+      return Array.from(tableRows).flatMap((row) => {
         return Object.values(row).filter((cell) => cell.isDirty)
       })
     },
@@ -415,7 +424,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
       // 2. Find dirty row indices by scanning the table directly
       const dirtyRowIndices = new Set()
-      table.forEach((row, rowIndex) => {
+      Array.from(table).forEach((row, rowIndex) => {
         const rowHasDirtyCell = Object.values(row).some((cell) => cell.isDirty)
         if (rowHasDirtyCell) {
           dirtyRowIndices.add(rowIndex)
@@ -490,17 +499,17 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
         }
       }
 
-      cells.forEach((cell) => {
-        const row = cell?.row_index
-        const col = cell?.col_index
+      // cells.forEach((cell) => {
+      //   const row = cell?.row_index
+      //   const col = cell?.col_index
 
-        console.log('ADDING CELL')
-        console.log(cell)
-        console.log(row)
-        console.log(col)
+      //   console.log('ADDING CELL')
+      //   console.log(cell)
+      //   console.log(row)
+      //   console.log(col)
 
-        if ((row || row == 0) && (col || col == 0)) Object.assign(cellTable[row][col], cell);
-      })
+      //   if ((row || row == 0) && (col || col == 0)) Object.assign(cellTable[row][col], cell);
+      // })
 
 
       const tableCols = this.sheets.get(sheetId).cols
@@ -512,10 +521,10 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
         }
       }
 
-      //this.cellTables.set(sheetId, cellTable)
+
       console.log(cellTable)
       console.log(tableCols)
-      return cellTable
+      return cells //cellTable
     },
     //#endregion
 
