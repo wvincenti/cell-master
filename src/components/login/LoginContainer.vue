@@ -71,8 +71,8 @@ const onFormSubmit = async ({ valid, values }) => {
         <div class="row justify-content-center align-items-center">
             <div class="col-10 col-sm-8 col-md-4 col-xxl-3">
 
-                <Form v-slot="$form" :validateOnValueUpdate="false" :validateOnBlur="true"
-                    :validateOnMount="['email']" @submit="onFormSubmit" method="post" class="row gy-1">
+                <Form v-slot="$form" :validateOnValueUpdate="false" :validateOnBlur="true" :validateOnMount="['email']"
+                    @submit="onFormSubmit" method="post" class="row gy-1">
 
                     <div class="col-12">
                         <InputText name="email" type="text" placeholder="Email" fluid required
@@ -82,7 +82,7 @@ const onFormSubmit = async ({ valid, values }) => {
                     </div>
 
                     <div class="col-12">
-                        <InputText name="password" type="text" placeholder="Password" fluid required />
+                        <InputText name="password" type="password" placeholder="Password" fluid required />
                         <!-- <Message v-if="$form?.password?.invalid" severity="error" size="small" variant="simple">{{
                             $form?.password?.error?.message }}</Message> -->
                     </div>

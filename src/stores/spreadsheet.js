@@ -7,6 +7,9 @@ const urlbase = import.meta.env.VITE_API_URL
 export const TABLE_ROW_NUM = 20
 export const TABLE_COL_NUM = 11
 
+const CELL_BIT_WIDTH = 12
+const CELL_BIT_HEIGHT = 32 - CELL_BIT_WIDTH
+
 // export const CELL_TABLES = new Map()
 
 axios.defaults.withCredentials = true
@@ -34,7 +37,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
     sheetOrderedIds: [],
 
     cellTables: markRaw(new Map()), // sheets' cells[[{sheet_id, col_id, col_index, row_index, data_type, cell_value, isDirty}, {...}, ...], [{...}], ...]
-    
+
     loadedSheetOrderedIds: [],
 
     activeTableOrderedIds: [],
@@ -44,8 +47,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
     mainTableWidth: 600,
     mainTableHeight: 300,
-    tabListHeight: 100
-
+    tabListHeight: 100,
   }),
   //#endregion
 
@@ -102,7 +104,6 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
   },
 
   actions: {
-
     setMainTableHeight(height) {
       this.mainTableHeight = height
     },
@@ -140,11 +141,11 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
     },
     //#endregion
 
-
     //#region ADD TABLE
 
     addCellTable(cellTable, sheetId) {
       this.cellTables.set(sheetId, cellTable)
+
       // LIST OF SHEETS IN WORK AREA
       this.loadedSheetOrderedIds.push(sheetId)
 
@@ -152,7 +153,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       this.activeTableOrderedIds.push(sheetId)
     },
 
-    addSheet({ cellTable = [], sheetMeta = {} } = {}) {
+    addSheet({ cellTable = new Map(), sheetMeta = {} } = {}) {
       this.sheets.set(sheetMeta.id, sheetMeta)
 
       this.cellTables.set(sheetMeta.id, cellTable)
@@ -244,9 +245,12 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
         if (response.status == 200) {
           dirtyCells.forEach((cell) => {
+            //cell.sheet_id = response.data
             this.patchCellState(cell, {
               isNew: false,
               isDirty: false,
+              col_index: cell.col_index,
+              row_index: cell.row_index,
               sheet_id: response.data,
               old_value: cell.cell_value,
             })
@@ -287,10 +291,14 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
     //#region PATCHING
 
     patchSheetState(sheetPointer, updates = {}) {
+      console.log(sheetPointer)
       const oldId = sheetPointer.id
       const sheet = this.sheets.get(oldId)
 
-      if (!sheet) return
+      if (!sheet) {
+        console.error('ERROR: NO SHEET FOUND!')
+        return
+      }
 
       Object.assign(sheet, updates)
 
@@ -355,28 +363,50 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
       const { sheet_id, row_index, col_index } = cellPointer
 
+      // if (!this.cellTables.has(sheet_id))
+
       const table = this.cellTables.get(sheet_id)
 
-      if (!table[row_index]) table[row_index] = {}
-      
-      if (!table[row_index][col_index]) table[row_index][col_index] = {}
+      const cellKey = this.encode32BitCell(cellPointer)
 
-      const cell = this.cellTables.get(sheet_id)?.[row_index]?.[`${col_index}`]
+      if (!table.has(cellKey)) table.set(cellKey, this.createCell(cellPointer))
 
-      console.log('STORE CELL')
-      console.log(cell)
-      if (!cell) {
-        console.warn(`Cell not found for sheet ${sheet_id}, row ${row_index}, column ${col_index}.`)
-        return
-      }
+      console.log(table)
+
+      const storeCell = table.get(cellKey)
+
+      console.log(storeCell)
+
+      // if (!table?.[row_index]) table[row_index] = {}
+
+      // if (!table[row_index][col_index])
+      //   table[row_index][col_index] = { row_index, col_index, sheet_id, data_type: 'string' }
+
+      // const cell = this.cellTables.get(sheet_id)?.[row_index]?.[`${col_index}`]
+
+      // console.log('STORE CELL')
+      // console.log(cell)
+      // if (!cell) {
+      //   console.warn(`Cell not found for sheet ${sheet_id}, row ${row_index}, column ${col_index}.`)
+      //   return
+      // }
 
       const { cell_value } = updates
 
       const sheet = this.sheets.get(sheet_id)
-      if (cell_value && cell_value != cell.old_vlaue) {
+      if (cell_value && cell_value != storeCell.old_vlaue) {
         updates.isDirty = true
 
-        if (!sheet.isDirty) this.patchSheetState(sheet, { isDirty: true })
+        const sheetUpdates = {}
+        const sheetRows = sheet?.rows ? [...sheet?.rows] : []
+        sheetRows.push(cellPointer.row_index)
+
+        console.log(sheetRows)
+        sheetUpdates.rows = new Set(sheetRows)
+
+        // if (!sheet.isDirty)
+
+        this.patchSheetState(sheet, { ...sheetUpdates, isDirty: true })
       }
 
       const currentColIndex = updates.col_index || col_index
@@ -395,41 +425,82 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       console.log('assigning cell state')
       console.log(updates)
 
-      Object.assign(cell, updates)
+      if (storeCell.cell_value !== updates.cell_value) {
+        updates.isDirty = true
+        updates.old_value = storeCell.cell_vlaue
+      }
+
+      Object.assign(storeCell, updates)
     },
     //#endregion
 
     //#region DIRTY OBJECTS
     findDirtyCells(sheetId) {
-      const tableRows = this.cellTables.get(sheetId)
+      const storeCells = this.cellTables.get(sheetId)
 
-      if (!tableRows) {
+      if (!storeCells) {
         console.error(`Sheet with ID ${sheetId} not found.`)
         return
       }
 
+      // const dCells = Array.from(storeCells).filter(([key, cell]) => {
+      //   console.log(cell)
+      //   if (cell.isDirty) return cell
+      //   else return false
+      // })
+      const dCells = []
+      for (const cell of storeCells.values()) {
+        if (cell.isDirty) {
+          dCells.push(cell)
+        }
+      }
+
+      console.log(dCells)
       // return tableRows.flatMap((row) => {
       //   return Object.values(row).filter((cell) => cell.isDirty)
       // })
-      return Array.from(tableRows).flatMap((row) => {
-        return Object.values(row).filter((cell) => cell.isDirty)
-      })
+      // const dCells = Array.from(tableRows).flatMap((row) => {
+      //   return Object.values(row).filter((cell) => cell.isDirty)
+      // })
+      // console.log(dCells)
+      return dCells
     },
 
     // *** REVIEW DIRTY ROW SELECTION AND DB INSERTION ***
+    lookupModelCell(cellPoiner) {
+      return this.cellTables?.get(cellPoiner.sheet_id)?.get(this.encode32BitCell(cellPoiner))
+    },
+
+    encode32BitCell(cellPoiner) {
+      const key = (cellPoiner.row_index << CELL_BIT_WIDTH) | cellPoiner.col_index
+      // console.log(key)
+
+      return key
+    },
+
+    decode32BitCell(key) {
+      console.log('decoding: ' + key)
+      const row_index = key >> CELL_BIT_WIDTH
+      const col_index = key & 0xfff
+
+      console.log('row: ' + row_index)
+      console.log('col: ' + col_index)
+
+      return { col_index, row_index }
+    },
 
     findDirtySheet(sheetId) {
       const table = this.cellTables.get(sheetId) || []
       const sheet = this.sheets.get(sheetId)
 
       // 2. Find dirty row indices by scanning the table directly
-      const dirtyRowIndices = new Set()
-      Array.from(table).forEach((row, rowIndex) => {
-        const rowHasDirtyCell = Object.values(row).some((cell) => cell.isDirty)
-        if (rowHasDirtyCell) {
-          dirtyRowIndices.add(rowIndex)
-        }
-      })
+      // const dirtyRowIndices = new Set()
+      // Array.from(table).forEach((row, rowIndex) => {
+      //   const rowHasDirtyCell = Object.values(row).some((cell) => cell.isDirty)
+      //   if (rowHasDirtyCell) {
+      //     dirtyRowIndices.add(rowIndex)
+      //   }
+      // })
 
       // 3. Filter down your dirty columns safely
       const dirtyCols = sheet?.cols?.filter((col) => {
@@ -446,14 +517,14 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       // 4. Return the enhanced sheet object
       return {
         ...sheet,
-        rows: Array.from(dirtyRowIndices),
+        rows: [...sheet.rows], // Array.from(dirtyRowIndices),
         cols: dirtyCols,
       }
     },
 
     findCellsToDelete(dirtyCells) {
       return (
-        dirtyCells?.filter(
+        Array.from(dirtyCells)?.filter(
           (cell) => !cell.isNew && (cell.cell_value == '' || cell.cell_value == null),
         ) || []
       )
@@ -462,80 +533,77 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
 
     //#region CREATE OBJECTS
 
-
-
-
     //#region create sheet
-    createSheet(cells, sheetId, rowNum = TABLE_ROW_NUM, colNum = TABLE_COL_NUM) {
-      const cellTable = []
+    createTable(cells, sheetId, rowNum = TABLE_ROW_NUM, colNum = TABLE_COL_NUM) {
+      const cellTable = new Map()
 
-      for (let i = 0; i < rowNum; i++) {
-        cellTable[i] = {}
+      // for (let i = 0; i < rowNum; i++) {
+      //   cellTable[i] = {}
 
-        for (let j = 0; j < colNum; j++) {
-          // if (i == 0) {
-          //   cellTable.cols[j] = {
-          //     col_index: j,
-          //     old_col_index: j,
-          //     sheet_id: sheetId,
-          //     name: null,
-          //     old_name: null,
-          //     data_type: 'string',
-          //     old_data_type: 'string',
-          //     isDirty: false,
-          //     isNew: true,
-          //   }
-          // }
+      //   for (let j = 0; j < colNum; j++) {
+      //     if (i == 0) {
+      //       cellTable[i][j] = {}
+      //       // {
+      //       //   col_index: j,
+      //       //   old_col_index: j,
+      //       //   sheet_id: sheetId,
+      //       //   name: null,
+      //       //   old_name: null,
+      //       //   data_type: 'string',
+      //       //   old_data_type: 'string',
+      //       //   isDirty: false,
+      //       //   isNew: true,
+      //       // }
+      //     }
 
-          cellTable[i][j] = {
-            cell_value: '',
-            old_value: '',
-            row_index: i,
-            col_index: j,
-            isDirty: false,
-            sheet_id: sheetId,
-            data_type: 'string',
-          }
-        }
-      }
+      //     cellTable[i][j] = {
+      //       cell_value: '',
+      //       old_value: '',
+      //       row_index: i,
+      //       col_index: j,
+      //       isDirty: false,
+      //       sheet_id: sheetId,
+      //       data_type: 'string',
+      //     }
+      //   }
+      // }
 
-      // cells.forEach((cell) => {
-      //   const row = cell?.row_index
-      //   const col = cell?.col_index
+      cells.forEach((cell) => {
+        const row = cell?.row_index
+        const col = cell?.col_index
 
-      //   console.log('ADDING CELL')
-      //   console.log(cell)
-      //   console.log(row)
-      //   console.log(col)
+        console.log('ADDING CELL')
+        console.log(cell)
+        console.log(row)
+        console.log(col)
 
-      //   if ((row || row == 0) && (col || col == 0)) Object.assign(cellTable[row][col], cell);
-      // })
-
+        cellTable.set(this.encode32BitCell(cell), cell)
+        //if ((row || row == 0) && (col || col == 0)) Object.assign(cellTable[row][col], cell)
+      })
 
       const tableCols = this.sheets.get(sheetId).cols
 
-      for(let i = 0; i < TABLE_COL_NUM; i++){
-        if(!tableCols[i]) {
-          
-          tableCols[i] = this.createCol({col_index:i, sheet_id: sheetId, data_type:'string', name:null })
+      for (let i = 0; i < TABLE_COL_NUM; i++) {
+        if (!tableCols[i]) {
+          tableCols[i] = this.createCol({
+            col_index: i,
+            sheet_id: sheetId,
+            data_type: 'string',
+            name: null,
+          })
         }
       }
 
-
       console.log(cellTable)
       console.log(tableCols)
-      return cells //cellTable
+      return cellTable
     },
     //#endregion
 
-
-    //#region create empty sheet
-    // REMOVE SHEET INDEX AS ITS LIKELY TO BE UNECESSARY
-    createEmptySheet(rowNum = TABLE_ROW_NUM, colNum = TABLE_COL_NUM) {
-      const tempId = crypto.randomUUID()
-
-      const sheetMeta = {
-        id: tempId,
+    //#region create empty shee
+    createSheetMeta(id) {
+      return {
+        id: id,
         name: `sheet ${this.sheetCount + 1}`,
         old_name: `sheet ${this.sheetCount + 1}`,
         permission: 'admin',
@@ -547,12 +615,20 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
         isDirty: false,
         cols: [],
         linked_sheet_ids: [],
+        rows: new Set([]),
       }
+    },
 
-      const cellTable = []
+    // REMOVE SHEET INDEX AS ITS LIKELY TO BE UNECESSARY
+    createEmptySheet(rowNum = TABLE_ROW_NUM, colNum = TABLE_COL_NUM) {
+      const tempId = crypto.randomUUID()
+
+      const sheetMeta = this.createSheetMeta(tempId)
+
+      const cellTable = new Map()
 
       for (let i = 0; i < rowNum; i++) {
-        cellTable[i] = {}
+        // cellTable[i] = {}
 
         for (let j = 0; j < colNum; j++) {
           if (i == 0) {
@@ -569,15 +645,15 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
             }
           }
 
-          cellTable[i][j] = {
-            cell_value: '',
-            old_value: '',
-            row_index: i,
-            col_index: j,
-            isDirty: false,
-            sheet_id: tempId,
-            data_type: 'string',
-          }
+          // cellTable[i][j] = {
+          //   cell_value: '',
+          //   old_value: '',
+          //   row_index: i,
+          //   col_index: j,
+          //   isDirty: false,
+          //   sheet_id: tempId,
+          //   data_type: 'string',
+          // }
         }
       }
       console.log(cellTable)
@@ -585,10 +661,9 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
     },
     //#endregion
 
-
     //#region create col
     createCol(col) {
-      console.log(col)
+      // console.log(col)
       let { col_index, sheet_id, data_type, name } = col
 
       data_type = data_type || 'string'
@@ -608,38 +683,67 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
         old_data_type: null,
         old_name: null,
         isDirty: false,
-        isNew: true
+        isNew: true,
       }
 
-      console.log(newCol)
+      // console.log(newCol)
 
       return newCol
+    },
+
+    createCell(cellValues = {}) {
+      const rowIdx = cellValues.row_index
+      const colIdx = cellValues.col_index
+      const sheetId = cellValues.sheet_id
+
+      if (isNaN(rowIdx) || isNaN(colIdx) || (!sheetId && sheetId != 0)) {
+        console.error("No coordinates provided, can't add cell to table")
+        console.warn(`sheet id = ${sheetId}\n row index: ${rowIdx} \n col index: ${colIdx}`)
+
+        return
+      }
+      return {
+        cell_value: cellValues.cell_value || '',
+        old_value: cellValues.old_value || '',
+        row_index: rowIdx,
+        col_index: colIdx,
+        isDirty: cellValues.isDirty || false,
+        sheet_id: sheetId,
+        data_type: cellValues.data_type || 'string',
+      }
     },
     //#endregion
 
     //#region MACRO ACTIONS
 
-    async fetchSheetFromDataBase(sheetId, isSetActive = false) {
-      const { sheetMeta, cellTable } = await this.fetchSheetCells(sheetId)
+    // async fetchSheetFromDataBase(sheetId, isSetActive = false) {
+    //   const { sheetMeta, cellTable } = await this.fetchSheetCells(sheetId)
+    //   console.log("***  TEST  ***")
+    //   console.log(sheetMeta)
+    //   console.log(cellTable)
 
-      sheetMeta.index = this.tableCount
+    //   sheetMeta.index = this.tableCount
 
-      this.addSheet({ sheetMeta, cellTable })
+    //   this.addSheet({ sheetMeta, cellTable })
 
-      if (isSetActive) this.activeTab = this.activeTableCount
-    },
+    //   if (isSetActive) this.activeTab = this.activeTableCount
+    // },
 
     async loadSheetToWorkArea(sheetId, isSetActive = true) {
-      let cells = await this.fetchSheetCells(sheetId)
+      const cellData = await this.fetchSheetCells(sheetId)
 
-      console.log(cells)
+      console.log(cellData)
 
-      const cellTable = this.createSheet(cells, sheetId)
+      const cellTable = this.createTable(cellData, sheetId)
+
       console.log('LOADING TABLE')
+
       console.log(cellTable)
+
       this.addCellTable(cellTable, sheetId)
 
       console.log(this.cellTables.get(sheetId))
+
       if (isSetActive) this.activeTab = this.cellTables.size - 1
     },
 

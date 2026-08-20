@@ -1,14 +1,15 @@
 <template>
-    <DataTable @cell-edit-init="onCellInit" @cell-edit-complete="onCellEditComplete"
-        v-memo="[colNumber, rowNumber, tableHeight]" edit-mode="cell" :value="tableGrid" :dataKey="getRowKey"
+    <DataTable ref="dtRef" @scroll="handleTableScroll" @cell-edit-init="onCellInit"
+        @cell-edit-complete="onCellEditComplete" v-memo="[colNumber, rowNumber, tableHeight]" edit-mode="cell"
+        :virtualScrollerOptions="{ itemSize: 46 }" :value="tableGrid" :dataKey="getRowKey"
         v-model:expandedRows="expandedRows" size="small" tableStyle="min-width: 50rem" showGridlines scrollable
         :scrollHeight="`${tableHeight}px`" :pt="{
             table: { style: 'min-width: 50rem' },
-                           column: {
-                    bodycell: ({ state }) => ({
-                        class: [{ 'p-0': state['d_editing'] }]
-                    })
-                },
+            column: {
+                bodycell: ({ state }) => ({
+                    class: [{ 'p-0': state['d_editing'] }]
+                })
+            },
             rowExpansionCell: {
                 style: `width: ${500}px`
             }
@@ -22,12 +23,14 @@
                 <span>{{ slotProps.index }}</span>
             </template>
         </Column>
-        <Column v-once v-for="i in colNumber" :key="'col-' + i" :header="null" :field="`${i - 1}.cell_value`"
-            style="min-width: 10rem;">
-            <template #editor="{ data, field }">
-                <InputText v-model="oldInputValue" class="h-100 w-100 border-0 rounded-0"></InputText>
-            </template>
-        </Column>
+        <template v-for="i in colNumber">
+            <Column :header="null" :field="`${i - 1}.cell_value`" style="min-width: 10rem;">
+                <template #editor="{ data, field }">
+                    <InputText v-model="oldInputValue" class="h-100 w-100 border-0 rounded-0"></InputText>
+                </template>
+            </Column>
+        </template>
+
 
         <template #expansion="slotProps">
 
@@ -45,10 +48,10 @@
                     </div>
                 </div>
                 <div v-if="selectedLink" class="row">
-                    <div class="col">
+                    <!--   <div class="col">
                         <CellTable :table-height="200" :table-width="tableWidth" :table-id="selectedLink"
                             :row-number="5" :col-number="5" :key="`table-${selectedLink}`"></CellTable>
-                    </div>
+                    </div> -->
                 </div>
             </div>
 
@@ -57,12 +60,13 @@
 </template>
 <style scoped></style>
 <script setup>
-import { ref, computed, onBeforeMount, onUpdated, onMounted, watch, reactive, shallowReactive } from 'vue';
+import { ref, onBeforeUnmount, onUpdated, onMounted, watch, reactive, } from 'vue';
 import { Tabs, Tab, TabList, TabPanel, DataTable, Column, InputText, Button, Row } from 'primevue';
 import draggable from 'vuedraggable';
 import { getColLabel } from '@/stores/spreadsheet';
 import { useSpreadsheetStore } from '@/stores/spreadsheet';
 import { storeToRefs } from 'pinia';
+import { tab } from '@primeuix/themes/aura/tabs';
 
 
 const props = defineProps({
@@ -76,6 +80,8 @@ const props = defineProps({
 
 });
 
+const dtRef = ref(null);
+let scrollContainer = null;
 
 
 defineOptions({
@@ -87,10 +93,64 @@ onUpdated(() => {
     // console.log(rowLables.value);
 })
 
+let lastScrollTop = 0
+
+function handleTableScroll(event) {
+
+    const { scrollTop, scrollHeight, clientHeight } = event.target;
+    // console.log(event)
+    // console.log("Vertical scroll position:", scrollTop);
+
+    // Example: Check if user reached the bottom
+    if (scrollTop + clientHeight >= scrollHeight - 5) {
+        // console.log("Reached bottom of the table!");
+        for (let idx = 0; idx < 5; idx++) {
+            tableGrid.push(createGridRow(props.colNumber, tableGrid.length, props.tableId))
+        }
+    }
+
+    if (scrollTop > lastScrollTop) {
+        lastScrollTop = scrollTop;
+    } else if (scrollTop - lastScrollTop < - 20) {
+        tableGrid.pop()
+        lastScrollTop = scrollTop
+    }
+    // console.log('ROW COUNT: ' + tableGrid.length)
+}
 
 const spreadsheetStore = useSpreadsheetStore();
 
 const tableGrid = reactive(createTableGrid(props.rowNumber, props.colNumber))
+
+function createGridRow(colNum, i, sheetId = null) {
+    const gridRow = {}
+    for (let j = 0; j < colNum; j++) {
+
+
+
+        gridRow[j] =
+        {
+            // old_value : '',
+            cell_value: '',
+            row_index: i,
+            col_index: j,
+            // isDirty : false,
+            sheet_id: sheetId,
+            // data_type : 'string',
+        }
+
+        const modelCell = spreadsheetStore.lookupModelCell(gridRow[j]);
+
+        if (modelCell) {
+            gridRow[j].cell_value = modelCell?.cell_value
+        }
+
+    }
+
+
+
+    return gridRow
+}
 
 function createTableGrid(rowNum, colNum) {
 
@@ -101,20 +161,7 @@ function createTableGrid(rowNum, colNum) {
     const grid = []
 
     for (let i = 0; i < rowNum; i++) {
-        grid[i] = {}
-        for (let j = 0; j < colNum; j++) {
-
-            grid[i][j] =
-            {
-                // old_value : '',
-                cell_value: '',
-                row_index: i,
-                col_index: j,
-                // isDirty : false,
-                sheet_id: null,
-                // data_type : 'string',
-            }
-        }
+        grid.push(createGridRow(colNum))
     }
 
     console.log(grid)
@@ -132,61 +179,71 @@ const getRowKey = (data) => {
 
 
 watch(() => props.tableId, (newTableId) => {
-    console.log(tableGrid)
+    // console.log(props.tableId)
+    // console.log(newTableId)
+    // console.log(tableGrid)
 
     const tableModel = spreadsheetStore.cellTables.get(newTableId)
 
     console.log('TABLE MODEL ****')
-    console.log(tableModel)
+    // console.log(tableModel)
 
-    tableGrid.forEach((row, i) => {
+    tableGrid.forEach((rowVal, rowIdx) => {
 
-        for (const [key, value] of Object.entries(row)) {
+        // console.log(rowVal)
+        for (const [colIdx, colVal] of Object.entries(rowVal)) {
+            // console.log(colVal)
 
-            const cellModel = tableModel?.[i]?.[key]
+            const cell = tableGrid?.[rowIdx]?.[colIdx];
 
-            console.log(cellModel)
-
-            if (cellModel) {
-                value.cell_value = cellModel.cell_value
-                // value.row_index = cellModel.row_index,
-
-                // value.col_index = cellModel.col_index
-            } else {
-                value.cell_value = ''
-                // value.row_index = cellModel.row_index,
-                // value.sheet_id = cellModel.sheet_id,
-                // value.col_index = cellModel.col_index
+            if (cell) {
+                // Object.assign(cell,
+                //     {
+                //         cell_value: '',
+                //         row_index: rowIdx,
+                //         sheet_id: newTableId,
+                //         col_index: colIdx
+                //     }
+                // )
+                cell.cell_value = ''
+                cell.row_index = rowIdx
+                cell.sheet_id = newTableId
+                cell.col_index = colIdx
             }
 
-            value.sheet_id = newTableId
 
+            const modelCell = spreadsheetStore.lookupModelCell(cell);
+
+            if (modelCell) {
+                cell.cell_value = modelCell.cell_value
+            }
         }
+
+
     })
 
-    // spreadsheetStore.cellTables.get(newTableId)?.forEach((row) => {
+    // tableModel.forEach((cell) => {
+    //     console.log(cell)
+    //     if (!tableGrid?.[cell.row_index]) tableGrid[cell.row_index] = {};
 
-    //     for (const [key, value] of Object.entries(row)) {
-    //         //Object.assign(tableGrid[row_index][key], row[key]?.cell_value)
-    //         // console.log(value)
-    //         let gridRow = tableGrid?.[value?.row_index]
+    //     if (!tableGrid?.[cell.row_index]?.[cell.col_index]) tableGrid[cell.row_index][cell.col_index] = {
+    //         cell_value: cell?.cell_value,
+    //         row_index: cell?.row_index,
+    //         sheet_id: cell?.sheet_id,
+    //         col_index: cell?.col_index,
+    //         data_type: cell?.data_type
+    //     };
 
-    //         if (!gridRow) tableGrid[value?.row_index] = {};
+    //     Object.assign(tableGrid[cell.row_index][cell.col_index],
+    //         {
+    //             cell_value: cell?.cell_value,
+    //             row_index: cell?.row_index,
+    //             sheet_id: cell?.sheet_id,
+    //             col_index: cell?.col_index
+    //         }
+    //     )
 
-    //         let gridCell = gridRow?.[key]
-
-    //         if (!gridCell) tableGrid[value.row_index][key] = {};
-
-    //         Object.assign(
-    //             tableGrid[value?.row_index][key], 
-    //             { 
-    //                 cell_value: row[key]?.cell_value, 
-    //                 row_index: value?.row_index, 
-    //                 sheet_id: value?.sheet_id, 
-    //                 col_index: value?.col_index 
-    //             }
-    //         )
-    //     }
+    //     console.log(tableGrid?.[cell.row_index]?.[cell.col_index])
     // })
 }, { immediate: true })
 
@@ -200,15 +257,18 @@ const oldInputValue = ref(null);
 
 
 function onCellEditComplete(e) {
-    console.log(e)
+    // console.log(e)
     let { data, field } = e;
 
     const [col, valueField] = field.split('.');
 
     const editedCell = tableGrid[e.index][col];
-    console.log(editedCell);
+    // console.log(editedCell);
 
-    console.log(editedCell[valueField] != oldInputValue.value)
+    // console.log(editedCell[valueField] != oldInputValue.value)
+
+    // *** FIX MODEL ROW INSERTION
+
 
     if (editedCell[valueField] != oldInputValue.value)
         spreadsheetStore.patchCellState(editedCell, { cell_value: oldInputValue.value });
@@ -220,7 +280,7 @@ function onCellEditComplete(e) {
 
 function onCellInit(e) {
     let { data, field } = e;
-    console.log(e)
+    // console.log(e)
     let [col_index, valueField] = field.split('.');
     oldInputValue.value = data[col_index]?.[valueField];
 }
@@ -234,6 +294,26 @@ function handleRowExpanded() {
 const expandedRows = ref({});
 
 const selectedLink = ref(null);
+
+onMounted(() => {
+    if (dtRef.value?.$el) {
+        // PrimeVue wraps the scrollable body inside '.p-datatable-scrollbar-wrap' or '.p-datatable-table-container'
+        // Finding the container element that handles the overflow:
+        scrollContainer = dtRef.value.$el.querySelector('.p-datatable-table-container')
+            || dtRef.value.$el.querySelector('.p-datatable-scrollbar-wrap');
+
+        if (scrollContainer) {
+            scrollContainer.addEventListener('scroll', handleTableScroll);
+        }
+    }
+});
+
+onBeforeUnmount(() => {
+    // Clean up listener to prevent memory leaks
+    if (scrollContainer) {
+        scrollContainer.removeEventListener('scroll', handleTableScroll);
+    }
+});
 
 
 </script>

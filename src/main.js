@@ -27,7 +27,7 @@ app.use(PrimeVue, {
     theme: {
         preset: Aura
     },
-    rippe: true,
+    ripple: true,
 })
 
 app.directive('ripple', Ripple);
