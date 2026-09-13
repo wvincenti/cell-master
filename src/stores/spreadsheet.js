@@ -136,7 +136,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       if (tabIdx == 0) {
         this.activeTab = null
       } else if (tabIdx > 0) {
-        this.activeTab = tabIdx--
+        this.activeTab = tabIdx - 1
       }
     },
     //#endregion

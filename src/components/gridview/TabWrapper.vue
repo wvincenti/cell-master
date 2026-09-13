@@ -6,6 +6,8 @@ import { getColLabel } from '@/stores/spreadsheet';
 import { useSpreadsheetStore } from '@/stores/spreadsheet';
 import { storeToRefs } from 'pinia';
 import CellTable from './CellTable.vue';
+import CusotmTable from './CusotmTable.vue';
+import CanvasGrid from './CanvasGrid.vue';
 
 const spreadsheetStore = useSpreadsheetStore()
 
@@ -62,7 +64,7 @@ onMounted(async () => {
 
             spreadsheetStore.setMainTableHeight(tabPanelRef.value?.clientHeight - spreadsheetStore?.tabListHeight)
             spreadsheetStore.setMainTableWidth(tabPanelRef.value?.clientWidth)
-           
+
         }
     })
 })
@@ -124,14 +126,11 @@ onMounted(async () => {
         </draggable>
     </div> -->
     <div ref="tabPanelRef" class="h-100 w-100 tpr">
-        <CellTable 
-            :table-id="activeTableId" 
-            :table-height="mainTableHeight" 
-            :table-width="mainTableWidth"
-            :row-number="20" 
-            :col-number="11"
-        >
+        <CellTable :table-id="activeTableId" :table-height="mainTableHeight" :table-width="mainTableWidth"
+            :row-number="20" :col-number="11">
         </CellTable>
+        <!-- <CusotmTable></CusotmTable> -->
+        <!-- <CanvasGrid :table-id="activeTableId"></CanvasGrid> -->
     </div>
 </template>
 

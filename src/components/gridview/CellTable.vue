@@ -1,7 +1,8 @@
 <template>
-    <DataTable ref="dtRef" @scroll="handleTableScroll" @cell-edit-init="onCellInit"
-        @cell-edit-complete="onCellEditComplete" v-memo="[colNumber, rowNumber, tableHeight]" edit-mode="cell"
-        :virtualScrollerOptions="{ itemSize: 46 }" :value="tableGrid" :dataKey="getRowKey"
+    <DataTable :virtualScrollerOptions="{
+        itemSize: [46, 120], orientation: 'both', lazy: true, onLazyLoad: onLazyLoad
+    }" ref="dtRef" @cell-edit-init="onCellInit" @cell-edit-complete="onCellEditComplete"
+        v-memo="[colNumber, rowNumber, tableHeight]" edit-mode="cell" :value="tableGrid" :dataKey="getRowKey"
         v-model:expandedRows="expandedRows" size="small" tableStyle="min-width: 50rem" showGridlines scrollable
         :scrollHeight="`${tableHeight}px`" :pt="{
             table: { style: 'min-width: 50rem' },
@@ -95,15 +96,26 @@ onUpdated(() => {
 
 let lastScrollTop = 0
 
+function onLazyLoad(event) {
+    const { last } = event;
+
+    // Trigger when user scrolls near the bottom of loaded data
+    if (last >= tableGrid.length - 2) {
+        for (let i = 0; i < 5; i++) {
+            tableGrid.push(createGridRow(props.colNumber, tableGrid.length, props.tableId));
+        }
+    }
+}
+
 function handleTableScroll(event) {
 
     const { scrollTop, scrollHeight, clientHeight } = event.target;
     // console.log(event)
-    // console.log("Vertical scroll position:", scrollTop);
+    console.log("Vertical scroll position:", scrollTop);
 
     // Example: Check if user reached the bottom
     if (scrollTop + clientHeight >= scrollHeight - 5) {
-        // console.log("Reached bottom of the table!");
+        console.log("Reached bottom of the table!");
         for (let idx = 0; idx < 5; idx++) {
             tableGrid.push(createGridRow(props.colNumber, tableGrid.length, props.tableId))
         }
@@ -115,7 +127,7 @@ function handleTableScroll(event) {
         tableGrid.pop()
         lastScrollTop = scrollTop
     }
-    // console.log('ROW COUNT: ' + tableGrid.length)
+    console.log('ROW COUNT: ' + tableGrid.length)
 }
 
 const spreadsheetStore = useSpreadsheetStore();
@@ -125,7 +137,6 @@ const tableGrid = reactive(createTableGrid(props.rowNumber, props.colNumber))
 function createGridRow(colNum, i, sheetId = null) {
     const gridRow = {}
     for (let j = 0; j < colNum; j++) {
-
 
 
         gridRow[j] =
@@ -237,8 +248,7 @@ watch(() => props.tableId, (newTableId) => {
     //     Object.assign(tableGrid[cell.row_index][cell.col_index],
     //         {
     //             cell_value: cell?.cell_value,
-    //             row_index: cell?.row_index,
-    //             sheet_id: cell?.sheet_id,
+    //             row_index: cell?.row_index    //             sheet_id: cell?.sheet_id,
     //             col_index: cell?.col_index
     //         }
     //     )
@@ -268,8 +278,6 @@ function onCellEditComplete(e) {
     // console.log(editedCell[valueField] != oldInputValue.value)
 
     // *** FIX MODEL ROW INSERTION
-
-
     if (editedCell[valueField] != oldInputValue.value)
         spreadsheetStore.patchCellState(editedCell, { cell_value: oldInputValue.value });
     editedCell[valueField] = oldInputValue.value
